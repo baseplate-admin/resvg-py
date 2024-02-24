@@ -1,7 +1,7 @@
 import urllib.request
 import zipfile
-import os
 from pathlib import Path
+import tempfile
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -9,15 +9,18 @@ version = "0.40.0"
 
 
 def download_windows():
-    location = Path(BASE_DIR, "win.zip")
+    for file in BASE_DIR.glob("*.exe"):
+        if "resvg.exe" in file.name:
+            return
 
-    urllib.request.urlretrieve(
+    f = urllib.request.urlopen(
         f"https://github.com/RazrFalcon/resvg/releases/download/v{version}/resvg-win64.zip",
-        location,
     )
 
-    with zipfile.ZipFile(location, "r") as zip_ref:
-        zip_ref.extractall(path=BASE_DIR)
-        for file in BASE_DIR.glob("*exe"):
-            if "resvg.exe" in file.name:
-                os.remove(location)
+    with tempfile.NamedTemporaryFile() as fp:
+        fp.write(f.read())
+
+        with zipfile.ZipFile(fp, "r") as zip_ref:
+            zip_ref.extractall(path=BASE_DIR)
+
+        fp.close()
