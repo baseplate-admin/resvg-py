@@ -1,5 +1,5 @@
 import subprocess
-from .downloader import download_windows
+from .downloader import download_windows, download_linux
 import platform
 
 from pathlib import Path
@@ -12,7 +12,8 @@ if plt == "windows":
     download_windows()
     binary = Path(BASE_DIR, "resvg.exe")
 elif plt == "linux":
-    print("Your system is Linux")
+    download_linux()
+    binary = Path(BASE_DIR, "resvg")
 else:
     print("Unidentified system")
 
