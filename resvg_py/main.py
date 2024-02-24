@@ -3,6 +3,7 @@ from .downloader import download_windows, download_linux
 import platform
 import tempfile
 from pathlib import Path
+import os
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -19,16 +20,11 @@ else:
 
 
 def main(input: str):
-    contents = b""
-    with tempfile.NamedTemporaryFile(delete_on_close=True) as f:
+    with tempfile.NamedTemporaryFile() as f:
         subprocess.Popen(
             [binary, input, f.name],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-        )
-        f.seek(0)
-        contents = f.read()
+        ).wait()
 
-        f.close()
-
-    return contents
+        return f.read()
