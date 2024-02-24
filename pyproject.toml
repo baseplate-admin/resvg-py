@@ -1,16 +1,14 @@
-[build-system]
-requires = ["maturin>=1.4,<2.0"]
-build-backend = "maturin"
-
-[project]
+[tool.poetry]
 name = "resvg-py"
-requires-python = ">=3.8"
-classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-]
-dynamic = ["version"]
+version = "0.1.0"
+description = ""
+authors = ["baseplate-admin <61817579+baseplate-admin@users.noreply.github.com>"]
+readme = "README.md"
 
-[tool.maturin]
-features = ["pyo3/extension-module"]
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
