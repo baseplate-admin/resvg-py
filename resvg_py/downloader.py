@@ -1,6 +1,6 @@
 import urllib.request
 import zipfile
-
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -17,4 +17,7 @@ def download_windows():
     )
 
     with zipfile.ZipFile(location, "r") as zip_ref:
-        zip_ref.extractall()
+        zip_ref.extractall(path=BASE_DIR)
+        for file in BASE_DIR.glob("*exe"):
+            if "resvg.exe" in file.name:
+                os.remove(location)
