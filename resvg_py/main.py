@@ -19,12 +19,15 @@ else:
     print("Unidentified system")
 
 
-def main(input: str):
-    with tempfile.NamedTemporaryFile() as f:
-        subprocess.Popen(
-            [binary, input, f.name],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-        ).wait()
+def main(string: str):
+    with tempfile.NamedTemporaryFile("w") as input:
+        input.write(string)
 
-        return f.read()
+        with tempfile.NamedTemporaryFile() as f:
+            subprocess.Popen(
+                [binary, input.name, f.name],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            ).wait()
+
+            return f.read()
