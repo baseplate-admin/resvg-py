@@ -1,15 +1,16 @@
-[tool.poetry]
-name = "resvg-py"
-version = "0.1.0"
-description = "A safe wrapper around resvg-py"
-authors = ["baseplate-admin <61817579+baseplate-admin@users.noreply.github.com>"]
-license = "MIT"
-readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.10"
-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "resvg-py"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
