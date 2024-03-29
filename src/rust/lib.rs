@@ -13,6 +13,16 @@ fn sum_as_string(svg_string: String) -> PyResult<String> {
             .map_err(|e| e.to_string())
     }
     .unwrap();
+    let has_text_nodes = xml_tree
+        .descendants()
+        .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
+
+    let mut fontdb = usvg::fontdb::Database::new();
+
+    let tree = {
+        usvg::Tree::from_xmltree(&xml_tree, &usvg::Options::default(), &fontdb)
+            .map_err(|e| e.to_string())
+    };
 
     Ok(("Hello").to_string())
 }
