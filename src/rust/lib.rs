@@ -49,26 +49,31 @@ impl FitTo {
 struct Opts {
     fit_to: FitTo,
     font_family: Option<String>,
-    font_size: u32,
+    //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
     cursive_family: Option<String>,
     fantasy_family: Option<String>,
     monospace_family: Option<String>,
-    font_files: Vec<String>,
-    font_dirs: Vec<String>,
-    skip_system_fonts: bool,
+
+    font_files: Option<Vec<String>>,
+    font_dirs: Option<Vec<String>>,
+    // skip_system_fonts: bool,
 }
 
 fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
-    for path in &options.font_files {
-        if let Err(e) = fontdb.load_font_file(path) {
-            println!("Failed to load '{}' cause {}.", path.to_string(), e);
+    if let Some(font_files) = (&options.font_files) {
+        for path in font_files {
+            if let Err(e) = fontdb.load_font_file(path) {
+                println!("Failed to load '{}' cause {}.", path.to_string(), e);
+            }
         }
     }
 
-    for path in &options.font_dirs {
-        fontdb.load_fonts_dir(path);
+    if let Some(font_dirs) = (&options.font_dirs) {
+        for path in font_dirs {
+            fontdb.load_fonts_dir(path);
+        }
     }
 
     let take_or =
@@ -156,15 +161,13 @@ fn svg_to_base64(
     let options = Opts {
         fit_to,
         font_family: font_family,
-        font_size: todo!(),
         serif_family,
         sans_serif_family,
         cursive_family,
         fantasy_family,
         monospace_family,
-        font_files: font_files.unwrap(),
-        font_dirs: font_dirs.unwrap(),
-        skip_system_fonts: todo!(),
+        font_files: font_files,
+        font_dirs: font_dirs,
     };
     let pixmap = resvg_magic(options, svg_string).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
