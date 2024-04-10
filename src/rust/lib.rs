@@ -7,7 +7,6 @@ Based on
 use base64::{engine::general_purpose, Engine as _};
 use pyo3::prelude::*;
 use resvg;
-use resvg::usvg;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -59,11 +58,11 @@ struct Opts {
     // skip_system_fonts: bool,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: usvg::Options,
+    usvg_opt: resvg::usvg::Options,
     // Renderers
 }
 
-fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
+fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     if let Some(font_files) = &options.font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
@@ -88,7 +87,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
     fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
 }
 
-fn render_svg(options: Opts, tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
+fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     let mut pixmap = tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
@@ -102,11 +101,11 @@ fn render_svg(options: Opts, tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, Str
 
 fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
-        let xml_opt = usvg::roxmltree::ParsingOptions {
+        let xml_opt = resvg::usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
             ..Default::default()
         };
-        usvg::roxmltree::Document::parse_with_options(&svg_string, xml_opt)
+        resvg::usvg::roxmltree::Document::parse_with_options(&svg_string, xml_opt)
             .map_err(|e| e.to_string())
     }
     .unwrap();
@@ -114,12 +113,13 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    let mut fontdb = usvg::fontdb::Database::new();
+    let mut fontdb = resvg::usvg::fontdb::Database::new();
     if has_text_nodes {
         load_fonts(&mut options, &mut fontdb);
     }
     let tree = {
-        usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb).map_err(|e| e.to_string())
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
+            .map_err(|e| e.to_string())
     }
     .unwrap();
     let img: Vec<u8> = render_svg(options, &tree).unwrap().encode_png().unwrap();
@@ -153,16 +153,16 @@ fn svg_to_base64(
     image_rendering: Option<String>,
 ) -> PyResult<String> {
     let mut fit_to = FitTo::Original;
-    let mut default_size = usvg::Size::from_wh(100.0, 100.0).unwrap();
+    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
 
     if let (Some(w), Some(h)) = (width, height) {
-        default_size = usvg::Size::from_wh(w as f32, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).unwrap();
         fit_to = FitTo::Size(w, h);
     } else if let Some(w) = width {
-        default_size = usvg::Size::from_wh(w as f32, 100.0).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).unwrap();
         fit_to = FitTo::Width(w);
     } else if let Some(h) = height {
-        default_size = usvg::Size::from_wh(100.0, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
         fit_to = FitTo::Zoom(z as f32);
@@ -172,9 +172,9 @@ fn svg_to_base64(
         .unwrap_or("geometric_precision".to_string())
         .as_ref()
     {
-        "optimize_speed" => usvg::ShapeRendering::OptimizeSpeed,
-        "crisp_edges" => usvg::ShapeRendering::CrispEdges,
-        "geometric_precision" => usvg::ShapeRendering::GeometricPrecision,
+        "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
+        "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
+        "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
         _ => panic!("Unexpected invalid token for shape rendering"),
     };
 
@@ -182,9 +182,9 @@ fn svg_to_base64(
         .unwrap_or("geometric_precision".to_string())
         .as_ref()
     {
-        "optimize_speed" => usvg::TextRendering::OptimizeSpeed,
-        "optimize_legibility" => usvg::TextRendering::OptimizeLegibility,
-        "geometric_precision" => usvg::TextRendering::GeometricPrecision,
+        "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
+        "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
+        "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
         _ => panic!("Unexpected invalid token for text rendering"),
     };
 
@@ -192,8 +192,8 @@ fn svg_to_base64(
         .unwrap_or("optimize_quality".to_string())
         .as_ref()
     {
-        "optimize_quality" => usvg::ImageRendering::OptimizeQuality,
-        "optimize_speed" => usvg::ImageRendering::OptimizeSpeed,
+        "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
+        "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
         _ => panic!("Unexpected invalid token for image rendering",),
     };
 
@@ -202,7 +202,7 @@ fn svg_to_base64(
         None => None,
     };
 
-    let usvg_options = usvg::Options {
+    let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
         font_family: font_family.unwrap_or_else(|| "Times New Roman".to_string()),
@@ -212,7 +212,7 @@ fn svg_to_base64(
         text_rendering: _text_rendering,
         image_rendering: _image_rendering,
         default_size,
-        image_href_resolver: usvg::ImageHrefResolver::default(),
+        image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
     };
 
     let options = Opts {
