@@ -8,6 +8,7 @@ use base64::{engine::general_purpose, Engine as _};
 use pyo3::prelude::*;
 use resvg;
 use resvg::usvg;
+use usvg::Options;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -47,7 +48,6 @@ impl FitTo {
     }
 }
 struct Opts {
-    fit_to: FitTo,
     font_family: Option<String>,
     //  font_size: u32,
     serif_family: Option<String>,
@@ -59,10 +59,14 @@ struct Opts {
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // skip_system_fonts: bool,
+    // Abstract Classes
+    fit_to: FitTo,
+    usvg_opt: Options,
+    // Renderers
 }
 
 fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
-    if let Some(font_files) = (&options.font_files) {
+    if let Some(font_files) = &options.font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
                 println!("Failed to load '{}' cause {}.", path.to_string(), e);
@@ -70,7 +74,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
         }
     }
 
-    if let Some(font_dirs) = (&options.font_dirs) {
+    if let Some(font_dirs) = &options.font_dirs {
         for path in font_dirs {
             fontdb.load_fonts_dir(path);
         }
@@ -117,8 +121,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         load_fonts(&mut options, &mut fontdb);
     }
     let tree = {
-        usvg::Tree::from_xmltree(&xml_tree, &usvg::Options::default(), &fontdb)
-            .map_err(|e| e.to_string())
+        usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb).map_err(|e| e.to_string())
     }
     .unwrap();
     let img: Vec<u8> = render_svg(options, &tree).unwrap().encode_png().unwrap();
@@ -128,11 +131,16 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 #[pyfunction]
 fn svg_to_base64(
     svg_string: String,
-    // Control width, height, zoom
+    // Control width, height, zoom, dpi
     width: Option<u32>,
     height: Option<u32>,
     zoom: Option<u32>,
+    dpi: Option<u32>,
+    // Resource Directory
+    resources_dir: Option<String>,
     // Fonts
+    languages: Option<Vec<String>>,
+    font_size: Option<u32>,
     font_family: Option<String>,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -158,16 +166,34 @@ fn svg_to_base64(
         fit_to = FitTo::Zoom(z as f32);
     }
 
+    let _resources_dir = match resources_dir {
+        Some(value) => Some(std::fs::canonicalize(value).unwrap()),
+        None => None,
+    };
+
+    let usvg_options = usvg::Options {
+        resources_dir: _resources_dir,
+        dpi: dpi.unwrap_or(0) as f32,
+        font_family: font_family.unwrap_or_else(|| "Times New Roman".to_string()),
+        font_size: font_size.unwrap_or(16) as f32,
+        languages: languages.unwrap_or(vec![]),
+        shape_rendering: usvg::ShapeRendering,
+        text_rendering: options.text_rendering.get(),
+        image_rendering: options.image_rendering.get(),
+        default_size,
+        image_href_resolver: usvg::ImageHrefResolver::default(),
+    };
+
     let options = Opts {
         fit_to,
-        font_family: font_family,
+        font_family,
         serif_family,
         sans_serif_family,
         cursive_family,
         fantasy_family,
         monospace_family,
-        font_files: font_files,
-        font_dirs: font_dirs,
+        font_files,
+        font_dirs,
     };
     let pixmap = resvg_magic(options, svg_string).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
