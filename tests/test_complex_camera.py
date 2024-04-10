@@ -2,9 +2,55 @@ import resvg_py
 
 
 def test_complex_camera():
-    svg_string = """
-<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" height="206.25000" id="svg2" version="1.0" width="406.25000" x="0.00000000" y="0.00000000" sodipodi:version="0.32" inkscape:version="0.46" sodipodi:docname="AJ_Digital_Camera_ok.svg" inkscape:output_extension="org.inkscape.output.svg.inkscape"  inkscape:export-xdpi="55.827694" inkscape:export-ydpi="55.827694">
+    svg_string = r"""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" height="206.25000" id="svg2" version="1.0" width="406.25000" x="0.00000000" y="0.00000000" sodipodi:version="0.32" inkscape:version="0.46" sodipodi:docname="AJ_Digital_Camera_ok.svg" inkscape:output_extension="org.inkscape.output.svg.inkscape" inkscape:export-filename="C:\joanna\Gfx\drawings_vector\admin\thumbs\AJ_Digital_Camera_ok.png" inkscape:export-xdpi="55.827694" inkscape:export-ydpi="55.827694">
   <sodipodi:namedview inkscape:window-height="744" inkscape:window-width="1280" inkscape:pageshadow="2" inkscape:pageopacity="0.0" guidetolerance="10.0" gridtolerance="10.0" objecttolerance="10.0" borderopacity="1.0" bordercolor="#666666" pagecolor="#ffffff" id="base" showgrid="false" inkscape:zoom="2.3261538" inkscape:cx="69.088376" inkscape:cy="137.51653" inkscape:window-x="-4" inkscape:window-y="-4" inkscape:current-layer="svg2"/>
+  <metadata id="metadata3">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <dc:title>digital-camera</dc:title>
+        <dc:description/>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>digital</rdf:li>
+            <rdf:li/>
+            <rdf:li>11</rdf:li>
+            <rdf:li>hardware</rdf:li>
+            <rdf:li>photo</rdf:li>
+            <rdf:li>digicam</rdf:li>
+            <rdf:li>computer</rdf:li>
+            <rdf:li>camera</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:publisher>
+          <cc:Agent rdf:about="http://www.openclipart.org">
+            <dc:title>AJ Ashton</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>AJ Ashton</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>AJ Ashton</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:date/>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+        <cc:license rdf:resource="http://web.resource.org/cc/PublicDomain"/>
+        <dc:language>en</dc:language>
+      </cc:Work>
+      <cc:License rdf:about="http://web.resource.org/cc/PublicDomain">
+        <cc:permits rdf:resource="http://web.resource.org/cc/Reproduction"/>
+        <cc:permits rdf:resource="http://web.resource.org/cc/Distribution"/>
+        <cc:permits rdf:resource="http://web.resource.org/cc/DerivativeWorks"/>
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
   <defs id="defs3">
     <inkscape:perspective sodipodi:type="inkscape:persp3d" inkscape:vp_x="0 : 103.125 : 1" inkscape:vp_y="0 : 1000 : 0" inkscape:vp_z="406.25 : 103.125 : 1" inkscape:persp3d-origin="203.125 : 68.75 : 1" id="perspective222"/>
     <linearGradient id="linearGradient2303">

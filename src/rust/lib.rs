@@ -83,11 +83,6 @@ fn resvg_magic(svg_string: String) -> Result<Vec<u8>, String> {
 #[pyfunction]
 fn svg_to_base64(svg_string: String) -> PyResult<String> {
     //let string = svg_string;
-    let string = std::str::from_utf8(&std::fs::read("FUCK.svg").unwrap())
-        .unwrap()
-        .to_string();
-
-    println!("{}", string);
 
     let pixmap = resvg_magic(String::from(svg_string)).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
