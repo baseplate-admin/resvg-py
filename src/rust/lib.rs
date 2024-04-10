@@ -52,7 +52,7 @@ struct Opts {
     cursive_family: Option<String>,
     fantasy_family: Option<String>,
     monospace_family: Option<String>,
-
+    background: Option<svgtypes::Color>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // skip_system_fonts: bool,
@@ -86,13 +86,19 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     fontdb.set_fantasy_family(take_or(options.fantasy_family.take(), "Impact"));
     fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
 }
-
+fn svg_to_skia_color(color: svgtypes::Color) -> tiny_skia::Color {
+    tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
+}
 fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     let mut pixmap = tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
     )
     .unwrap();
+
+    if let Some(background) = options.background {
+        pixmap.fill(svg_to_skia_color(background));
+    }
     let ts = options.fit_to.fit_to_transform(tree.size().to_int_size());
     resvg::render(tree, ts, &mut pixmap.as_mut());
 
@@ -151,6 +157,8 @@ fn svg_to_base64(
     shape_rendering: Option<String>,
     text_rendering: Option<String>,
     image_rendering: Option<String>,
+    // Background
+    background: Option<String>,
 ) -> PyResult<String> {
     let mut fit_to = FitTo::Original;
     let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
@@ -202,6 +210,14 @@ fn svg_to_base64(
         None => None,
     };
 
+    let _background = match background {
+        Some(color_str) => match color_str.parse::<svgtypes::Color>() {
+            Ok(color) => Some(color),
+            Err(error) => panic!("Error background: {}", error),
+        },
+        None => None,
+    };
+
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
@@ -217,6 +233,7 @@ fn svg_to_base64(
 
     let options = Opts {
         usvg_opt: usvg_options,
+        background: _background,
         fit_to,
         serif_family,
         sans_serif_family,
@@ -232,7 +249,7 @@ fn svg_to_base64(
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn resvg_py(_py: Python, m: &PyModule) -> PyResult<()> {
+fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(svg_to_base64, m)?)?;
     Ok(())
 }
