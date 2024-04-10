@@ -413,7 +413,6 @@ dependencies = [
  "pyo3",
  "resvg",
  "svgtypes 0.15.0",
- "tiny-skia",
 ]
 
 [[package]]

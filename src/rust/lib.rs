@@ -23,23 +23,23 @@ enum FitTo {
 }
 
 impl FitTo {
-    fn fit_to_size(&self, size: tiny_skia::IntSize) -> Option<tiny_skia::IntSize> {
+    fn fit_to_size(&self, size: resvg::tiny_skia::IntSize) -> Option<resvg::tiny_skia::IntSize> {
         match *self {
             FitTo::Original => Some(size),
             FitTo::Width(w) => size.scale_to_width(w),
             FitTo::Height(h) => size.scale_to_height(h),
-            FitTo::Size(w, h) => tiny_skia::IntSize::from_wh(w, h).map(|s| size.scale_to(s)),
+            FitTo::Size(w, h) => resvg::tiny_skia::IntSize::from_wh(w, h).map(|s| size.scale_to(s)),
             FitTo::Zoom(z) => size.scale_by(z),
         }
     }
 
-    fn fit_to_transform(&self, size: tiny_skia::IntSize) -> tiny_skia::Transform {
+    fn fit_to_transform(&self, size: resvg::tiny_skia::IntSize) -> resvg::tiny_skia::Transform {
         let size1 = size.to_size();
         let size2 = match self.fit_to_size(size) {
             Some(v) => v.to_size(),
-            None => return tiny_skia::Transform::default(),
+            None => return resvg::tiny_skia::Transform::default(),
         };
-        tiny_skia::Transform::from_scale(
+        resvg::tiny_skia::Transform::from_scale(
             size2.width() / size1.width(),
             size2.height() / size1.height(),
         )
@@ -86,11 +86,11 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     fontdb.set_fantasy_family(take_or(options.fantasy_family.take(), "Impact"));
     fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
 }
-fn svg_to_skia_color(color: svgtypes::Color) -> tiny_skia::Color {
-    tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
+fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
+    resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
-fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
-    let mut pixmap = tiny_skia::Pixmap::new(
+fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
+    let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
     )
