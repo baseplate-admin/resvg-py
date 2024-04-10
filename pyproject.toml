@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "resvg-py"
-version = "0.1.0"
+version = "0.0.1"
 description = ""
 authors = ["baseplate-admin <61817579+baseplate-admin@users.noreply.github.com>"]
 readme = "README.md"
