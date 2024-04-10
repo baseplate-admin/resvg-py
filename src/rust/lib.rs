@@ -55,9 +55,7 @@ fn render_svg(tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     Ok(pixmap)
 }
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(svg_string: String) -> PyResult<String> {
+fn resvg_magic(svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -79,12 +77,18 @@ fn sum_as_string(svg_string: String) -> PyResult<String> {
     }
     .unwrap();
     let img: Vec<u8> = render_svg(&tree).unwrap().encode_png().unwrap();
-    Ok(general_purpose::STANDARD.encode(&img))
+    Ok(img)
+}
+
+#[pyfunction]
+fn svg_to_base64(svg_string: String) -> PyResult<String> {
+    let pixmap = resvg_magic(svg_string).unwrap();
+    Ok(general_purpose::STANDARD.encode(&pixmap))
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+    m.add_function(wrap_pyfunction!(svg_to_base64, m)?)?;
     Ok(())
 }

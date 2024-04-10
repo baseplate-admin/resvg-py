@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.12"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+
 [build-system]
 requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
