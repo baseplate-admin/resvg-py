@@ -8,7 +8,6 @@ use base64::{engine::general_purpose, Engine as _};
 use pyo3::prelude::*;
 use resvg;
 use resvg::usvg;
-use usvg::Options;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -48,7 +47,6 @@ impl FitTo {
     }
 }
 struct Opts {
-    font_family: Option<String>,
     //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -61,7 +59,7 @@ struct Opts {
     // skip_system_fonts: bool,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: Options,
+    usvg_opt: usvg::Options,
     // Renderers
 }
 
@@ -90,7 +88,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
     fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
 }
 
-fn render_svg(mut options: Opts, tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
+fn render_svg(options: Opts, tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     let mut pixmap = tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
@@ -149,6 +147,10 @@ fn svg_to_base64(
     monospace_family: Option<String>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
+    // Effects based
+    shape_rendering: Option<String>,
+    text_rendering: Option<String>,
+    image_rendering: Option<String>,
 ) -> PyResult<String> {
     let mut fit_to = FitTo::Original;
     let mut default_size = usvg::Size::from_wh(100.0, 100.0).unwrap();
@@ -166,6 +168,35 @@ fn svg_to_base64(
         fit_to = FitTo::Zoom(z as f32);
     }
 
+    let _shape_rendering = match shape_rendering
+        .unwrap_or("geometric_precision".to_string())
+        .as_ref()
+    {
+        "optimize_speed" => usvg::ShapeRendering::OptimizeSpeed,
+        "crisp_edges" => usvg::ShapeRendering::CrispEdges,
+        "geometric_precision" => usvg::ShapeRendering::GeometricPrecision,
+        _ => panic!("Unexpected invalid token for shape rendering"),
+    };
+
+    let _text_rendering = match text_rendering
+        .unwrap_or("geometric_precision".to_string())
+        .as_ref()
+    {
+        "optimize_speed" => usvg::TextRendering::OptimizeSpeed,
+        "optimize_legibility" => usvg::TextRendering::OptimizeLegibility,
+        "geometric_precision" => usvg::TextRendering::GeometricPrecision,
+        _ => panic!("Unexpected invalid token for text rendering"),
+    };
+
+    let _image_rendering = match image_rendering
+        .unwrap_or("optimize_quality".to_string())
+        .as_ref()
+    {
+        "optimize_quality" => usvg::ImageRendering::OptimizeQuality,
+        "optimize_speed" => usvg::ImageRendering::OptimizeSpeed,
+        _ => panic!("Unexpected invalid token for image rendering",),
+    };
+
     let _resources_dir = match resources_dir {
         Some(value) => Some(std::fs::canonicalize(value).unwrap()),
         None => None,
@@ -177,16 +208,16 @@ fn svg_to_base64(
         font_family: font_family.unwrap_or_else(|| "Times New Roman".to_string()),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
-        shape_rendering: usvg::ShapeRendering,
-        text_rendering: options.text_rendering.get(),
-        image_rendering: options.image_rendering.get(),
+        shape_rendering: _shape_rendering,
+        text_rendering: _text_rendering,
+        image_rendering: _image_rendering,
         default_size,
         image_href_resolver: usvg::ImageHrefResolver::default(),
     };
 
     let options = Opts {
+        usvg_opt: usvg_options,
         fit_to,
-        font_family,
         serif_family,
         sans_serif_family,
         cursive_family,
