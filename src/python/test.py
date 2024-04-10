@@ -5,4 +5,6 @@ svg = """
   <rect width="200" height="100" x="10" y="10" rx="20" ry="20" fill="blue" />
 </svg>
 """
-print(sum_as_string(svg))
+lt = sum_as_string(svg)
+
+print(lt)

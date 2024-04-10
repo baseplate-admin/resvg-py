@@ -1,9 +1,7 @@
-use pyo3::ffi::PyObject;
+use base64::{engine::general_purpose, Engine as _};
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
 use resvg;
 use resvg::usvg;
-
 fn render_svg(tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     let mut pixmap = tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
@@ -18,7 +16,7 @@ fn render_svg(tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
-fn sum_as_string(py: Python, svg_string: String) -> PyResult<PyObject> {
+fn sum_as_string(py: Python, svg_string: String) -> PyResult<String> {
     let xml_tree = {
         let xml_opt = usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -39,9 +37,8 @@ fn sum_as_string(py: Python, svg_string: String) -> PyResult<PyObject> {
             .map_err(|e| e.to_string())
     }
     .unwrap();
-    let img = render_svg(&tree).unwrap().encode_png().unwrap();
-
-    Ok(PyBytes::new(py, &img).i)
+    let img: Vec<u8> = render_svg(&tree).unwrap().encode_png().unwrap();
+    Ok(general_purpose::STANDARD.encode(&img))
 }
 
 /// A Python module implemented in Rust.
