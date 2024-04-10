@@ -22,7 +22,7 @@ struct Opts {
     skip_system_fonts: bool,
 }
 
-fn load_font(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
+fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
     for path in &options.font_files {
         if let Err(e) = fontdb.load_font_file(path) {
             println!("Failed to load '{}' cause {}.", path.to_string(), e);
@@ -55,7 +55,7 @@ fn render_svg(tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     Ok(pixmap)
 }
 
-fn resvg_magic(svg_string: String) -> Result<Vec<u8>, String> {
+fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -70,7 +70,9 @@ fn resvg_magic(svg_string: String) -> Result<Vec<u8>, String> {
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
     let mut fontdb = usvg::fontdb::Database::new();
-
+    if has_text_nodes {
+        load_fonts(&mut options, &mut fontdb);
+    }
     let tree = {
         usvg::Tree::from_xmltree(&xml_tree, &usvg::Options::default(), &fontdb)
             .map_err(|e| e.to_string())
@@ -81,10 +83,31 @@ fn resvg_magic(svg_string: String) -> Result<Vec<u8>, String> {
 }
 
 #[pyfunction]
-fn svg_to_base64(svg_string: String) -> PyResult<String> {
+fn svg_to_base64(
+    svg_string: String,
+    font_family: Option<String>,
+    serif_family: Option<String>,
+    sans_serif_family: Option<String>,
+    cursive_family: Option<String>,
+    fantasy_family: Option<String>,
+    monospace_family: Option<String>,
+    font_files: Option<Vec<String>>,
+    font_dirs: Option<Vec<String>>,
+) -> PyResult<String> {
     //let string = svg_string;
-
-    let pixmap = resvg_magic(String::from(svg_string)).unwrap();
+    let options = Opts {
+        font_family: font_family,
+        font_size: todo!(),
+        serif_family,
+        sans_serif_family,
+        cursive_family,
+        fantasy_family,
+        monospace_family,
+        font_files: font_files.unwrap(),
+        font_dirs: font_dirs.unwrap(),
+        skip_system_fonts: todo!(),
+    };
+    let pixmap = resvg_magic(options, String::from(svg_string)).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
 }
 
