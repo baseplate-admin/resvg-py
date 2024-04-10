@@ -9,7 +9,45 @@ use pyo3::prelude::*;
 use resvg;
 use resvg::usvg;
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum FitTo {
+    /// Keep original size.
+    Original,
+    /// Scale to width.
+    Width(u32),
+    /// Scale to height.
+    Height(u32),
+    /// Scale to size.
+    Size(u32, u32),
+    /// Zoom by factor.
+    Zoom(f32),
+}
+
+impl FitTo {
+    fn fit_to_size(&self, size: tiny_skia::IntSize) -> Option<tiny_skia::IntSize> {
+        match *self {
+            FitTo::Original => Some(size),
+            FitTo::Width(w) => size.scale_to_width(w),
+            FitTo::Height(h) => size.scale_to_height(h),
+            FitTo::Size(w, h) => tiny_skia::IntSize::from_wh(w, h).map(|s| size.scale_to(s)),
+            FitTo::Zoom(z) => size.scale_by(z),
+        }
+    }
+
+    fn fit_to_transform(&self, size: tiny_skia::IntSize) -> tiny_skia::Transform {
+        let size1 = size.to_size();
+        let size2 = match self.fit_to_size(size) {
+            Some(v) => v.to_size(),
+            None => return tiny_skia::Transform::default(),
+        };
+        tiny_skia::Transform::from_scale(
+            size2.width() / size1.width(),
+            size2.height() / size1.height(),
+        )
+    }
+}
 struct Opts {
+    fit_to: FitTo,
     font_family: Option<String>,
     font_size: u32,
     serif_family: Option<String>,
@@ -43,13 +81,13 @@ fn load_fonts(options: &mut Opts, fontdb: &mut usvg::fontdb::Database) {
     fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
 }
 
-fn render_svg(tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
+fn render_svg(mut options: Opts, tree: &usvg::Tree) -> Result<tiny_skia::Pixmap, String> {
     let mut pixmap = tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
     )
     .unwrap();
-    let ts = tree.view_box().to_transform(tree.size());
+    let ts = options.fit_to.fit_to_transform(tree.size().to_int_size());
     resvg::render(tree, ts, &mut pixmap.as_mut());
 
     Ok(pixmap)
@@ -78,13 +116,18 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
             .map_err(|e| e.to_string())
     }
     .unwrap();
-    let img: Vec<u8> = render_svg(&tree).unwrap().encode_png().unwrap();
+    let img: Vec<u8> = render_svg(options, &tree).unwrap().encode_png().unwrap();
     Ok(img)
 }
 
 #[pyfunction]
 fn svg_to_base64(
     svg_string: String,
+    // Control width, height, zoom
+    width: Option<u32>,
+    height: Option<u32>,
+    zoom: Option<u32>,
+    // Fonts
     font_family: Option<String>,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -94,8 +137,24 @@ fn svg_to_base64(
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
 ) -> PyResult<String> {
-    //let string = svg_string;
+    let mut fit_to = FitTo::Original;
+    let mut default_size = usvg::Size::from_wh(100.0, 100.0).unwrap();
+
+    if let (Some(w), Some(h)) = (width, height) {
+        default_size = usvg::Size::from_wh(w as f32, h as f32).unwrap();
+        fit_to = FitTo::Size(w, h);
+    } else if let Some(w) = width {
+        default_size = usvg::Size::from_wh(w as f32, 100.0).unwrap();
+        fit_to = FitTo::Width(w);
+    } else if let Some(h) = height {
+        default_size = usvg::Size::from_wh(100.0, h as f32).unwrap();
+        fit_to = FitTo::Height(h);
+    } else if let Some(z) = zoom {
+        fit_to = FitTo::Zoom(z as f32);
+    }
+
     let options = Opts {
+        fit_to,
         font_family: font_family,
         font_size: todo!(),
         serif_family,
@@ -107,7 +166,7 @@ fn svg_to_base64(
         font_dirs: font_dirs.unwrap(),
         skip_system_fonts: todo!(),
     };
-    let pixmap = resvg_magic(options, String::from(svg_string)).unwrap();
+    let pixmap = resvg_magic(options, svg_string).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
 }
 
