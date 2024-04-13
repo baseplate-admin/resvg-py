@@ -33,7 +33,7 @@ We can convert it to `PNG` by:
     print(resvg_py.svg_to_base64(svg_string)) 
 
 
-This should return the following **PNG** image:
+This should return the following **PNG** image (check using inspect element):
 
 .. raw:: html
 
