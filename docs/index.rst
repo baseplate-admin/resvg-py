@@ -13,7 +13,8 @@ Safe bindings to `resvg <https://github.com/RazrFalcon/resvg>`_
    :caption: Contents:
 
    installation
-   usgae
+   usage
+   resvg
    contributing
 
 Indices and tables

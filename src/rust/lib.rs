@@ -188,7 +188,7 @@ fn svg_to_base64(
     };
 
     let _text_rendering = match text_rendering
-        .unwrap_or("geometric_precision".to_string())
+        .unwrap_or("optimize_legibility".to_string())
         .as_ref()
     {
         "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
