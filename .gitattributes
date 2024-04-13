@@ -1,1 +1,2 @@
 tests/*.py linguist-vendored
+docs/**/* linguist-documentation
