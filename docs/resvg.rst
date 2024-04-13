@@ -25,16 +25,32 @@ Resvg Module
     :type languages: list[str] or None
 
     :param font_size: An integer describing the font_size.
+    :type font_size: float or None
+
     :param font_family: A string that describes the font family used in SVG.
+    :type font_family: str or None
+
     :param serif_family: A string that describes the serif font family used in SVG.
+    :type serif_family: str or None
+
     :param sans_serif_family: A string that describes the sans serif font family used in SVG.
+    :type sans_serif_family: str or None
+
     :param cursive_family: A string that describes the cursive font family used in SVG.
+    :type cursive_family: str or None
+
     :param fantasy_family: A string that describes the fantasy font family used in SVG.
+    :type fantasy_family: str or None
+
     :param monospace_family: A string that describes the monospace font family used in SVG.
- 
+    :type monospace_family: str or None
+
     :param font_files: A list of paths that contain the font file.
+    :type font_files: list[str] or None
+
     :param font_dirs: A list of directories that contain the font file. This parameter will add all the present files in the directory.
-     
+    :type font_dirs: list[str] or None
+
     :param shape_rendering: The `shape rendering method <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/shape-rendering>`_ used in resvg. **Defaults to "geometric_precision"**.
     :type shape_rendering: "optimize_speed" or "crisp_edges" or **"geometric_precision"**
 
@@ -44,7 +60,8 @@ Resvg Module
     :param image_rendering: The `image rendering method <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/image-rendering>`_ used in resvg. **Defaults to "optimize_quality"**.
     :type image_rendering: **"optimize_quality"** or "optimize_speed"
 
-
+    :param background: A `CSS color <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value>`_ value that describes the canvas size.
+    :type background: str or None 
 
     :return: base64 encoded string.
     :rtype: str

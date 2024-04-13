@@ -11,6 +11,7 @@ My goal for this project is:
 
 * To enable all the features available in `resvg` but don't write to the disk, everything must be done in memory.
 * Use the bare minimum amount of packages, in both python side and rust side
+* Make the pacakge as user friendly as possible
 
 Getting Started
 ---------------
