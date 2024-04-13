@@ -5,11 +5,12 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import datetime
 
-project = "django_ltree"
-copyright = "2024, baseplate-admin"
+project = "resvg_py"
 author = "baseplate-admin"
-release = "0.1.5"
+copyright = f"2024-{datetime.date.today().year}, {author}"
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
