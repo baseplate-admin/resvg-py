@@ -133,6 +133,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 }
 
 #[pyfunction]
+#[pyo3(name = "svg_to_base64")]
 fn svg_to_base64(
     svg_string: String,
     // Control width, height, zoom, dpi
@@ -243,7 +244,7 @@ fn svg_to_base64(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, svg_string).unwrap();
+    let pixmap = resvg_magic(options, svg_string.trim().to_owned()).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
 }
 
