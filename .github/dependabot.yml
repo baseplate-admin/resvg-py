@@ -5,7 +5,13 @@
 
 version: 2
 updates:
-    - package-ecosystem: 'cargo' # See documentation for possible values
-      directory: '/' # Location of package manifests
-      schedule:
-          interval: 'weekly'
+  - package-ecosystem: "cargo" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 100
+  - package-ecosystem: "github-actions" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 100
