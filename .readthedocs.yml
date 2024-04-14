@@ -9,8 +9,8 @@ version: 2
 build:
     os: ubuntu-22.04
     tools:
-        python: '3.12'
-        rust: '1.79'
+        python: 'latest'
+        rust: 'latest'
         # You can also specify other tool versions:
     jobs:
         post_create_environment:
