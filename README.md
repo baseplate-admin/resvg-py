@@ -26,6 +26,8 @@ print(resvg_py.svg_to_base64(svg_string))
 
 ```
 
+(if you want a more complex solution please check the [api](https://resvg-py.readthedocs.io/en/latest/resvg.html). It exposes everything resvg has.)
+
 ## Requires
 
 -   Python 3.8 or higher
