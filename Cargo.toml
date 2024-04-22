@@ -15,6 +15,10 @@ pyo3 = "0.21.1"
 resvg = { version = "0.41.0", features = ["raster-images","text"] }
 svgtypes = "0.15.0"
 
+
+[profile.release.package."*"]
+opt-level = 3
+
 [profile.release]
 lto = "fat"
 opt-level = 3
