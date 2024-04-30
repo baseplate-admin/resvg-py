@@ -175,8 +175,6 @@ fn svg_to_base64(
     } else {
         svg_string = svg;
     }
-    println!("{:?}", svg_string);
-    
 
     let mut fit_to = FitTo::Original;
     let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
