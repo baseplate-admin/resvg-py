@@ -62,7 +62,7 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -s
+                  pytest -rP
             - name: pytest
               if: ${{ !startsWith(matrix.platform.target, 'x86') && matrix.platform.target != 'ppc64' }}
               uses: uraimo/run-on-arch-action@v2.7.2
@@ -77,7 +77,7 @@ jobs:
                   run: |
                       set -e
                       pip3 install resvg_py --find-links dist --force-reinstall
-                      pytest -s
+                      pytest -rP
 
     windows:
         runs-on: ${{ matrix.platform.runner }}
@@ -112,7 +112,7 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -s
+                  pytest -rP
 
     macos:
         runs-on: ${{ matrix.platform.runner }}
@@ -146,7 +146,7 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -s
+                  pytest -rP
 
     sdist:
         runs-on: ubuntu-latest
