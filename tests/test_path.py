@@ -7,10 +7,10 @@ svg_output = "iVBORw0KGgoAAAANSUhEUgAAAGwAAABfCAYAAAANiCLOAAAWd0lEQVR4Ae3gAZAkSZ
 
 
 def test_path():
-    base = resvg_py.svg_to_base64(str(Path(BASE_DIR, "acid.svg")))
+    base = resvg_py.svg_to_base64(str(Path(BASE_DIR, "acid.svg").resolve()))
     assert base == svg_output
 
 
 def test_gzip_path():
-    base = resvg_py.svg_to_base64(str(Path(BASE_DIR, "acid.svg.gz")))
+    base = resvg_py.svg_to_base64(str(Path(BASE_DIR, "acid.svg.gz").resolve()))
     assert base == svg_output
