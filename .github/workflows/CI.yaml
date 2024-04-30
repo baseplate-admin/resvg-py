@@ -16,7 +16,7 @@ on:
     workflow_dispatch:
 
 env:
-    RUST_BACKTRACE: 1
+    RUST_BACKTRACE: "full"
 
 permissions:
     contents: read
