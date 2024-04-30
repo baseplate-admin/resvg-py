@@ -21,3 +21,7 @@ def test_gzip_path():
 
     base = resvg_py.svg_to_base64(path)
     assert base == svg_output
+
+
+if __name__ == "__main__":
+    test_path()
