@@ -3,10 +3,10 @@ Resvg Module
 
 .. currentmodule:: resvg_py.svg_to_base64
 
-.. function:: svg_to_base64(svg_string:str,width:int|None=None,height:int|None=None,zoom:int|None=None,dpi:int|None=None,resources_dir:width:str|None=None,languages:list[str]|None=None,font_size:float|None=None,font_family:str|None=None,serif_family:str|None=None,sans_serif_family:str|None=None,cursive_family:str|None=None,fantasy_family:str|None=None,monospace_family:str|None=None,font_files:list[str]|None=None,font_dirs:list[str]|None=None,shape_rendering:"optimize_speed"|"crisp_edges"|"geometric_precision"="geometric_precision",text_rendering:"optimize_speed"|"optimize_legibility"|"geometric_precision"="optimize_legibility",image_rendering:"optimize_quality"|"optimize_speed"="optimize_quality",background:str|None=None) -> str
+.. function:: svg_to_base64(svg:str,width:int|None=None,height:int|None=None,zoom:int|None=None,dpi:int|None=None,resources_dir:width:str|None=None,languages:list[str]|None=None,font_size:float|None=None,font_family:str|None=None,serif_family:str|None=None,sans_serif_family:str|None=None,cursive_family:str|None=None,fantasy_family:str|None=None,monospace_family:str|None=None,font_files:list[str]|None=None,font_dirs:list[str]|None=None,shape_rendering:"optimize_speed"|"crisp_edges"|"geometric_precision"="geometric_precision",text_rendering:"optimize_speed"|"optimize_legibility"|"geometric_precision"="optimize_legibility",image_rendering:"optimize_quality"|"optimize_speed"="optimize_quality",background:str|None=None) -> str
 
-    :param svg_string: A string containing valid svg.
-    :type svg_string: string
+    :param svg: A string containing valid svg.
+    :type svg: string
 
     :param width: An Integer containing the pixels size for width.
     :type width: int or None
