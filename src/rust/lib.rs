@@ -169,7 +169,9 @@ fn svg_to_base64(
             svg_data =
                 resvg::usvg::decompress_svgz(&svg_data).expect("can't decompress the svg file");
         };
-        svg_string = std::str::from_utf8(&svg_data).unwrap().to_owned();
+        svg_string = std::str::from_utf8(&svg_data)
+            .expect("can't convert bytes to utf-8")
+            .to_owned();
     } else {
         svg_string = svg;
     }
