@@ -42,4 +42,19 @@ This should return the following **PNG** image (check using inspect element):
     </center>
 
 
+We can also do something like this :
+
+.. code-block:: python
+
+    
+    import resvg_py
+
+    svg = ... # path to svg file
+
+    print(resvg_py.svg_to_base64(svg)) 
+
+
+
+
+
 For extra parameters refer to :doc:`resvg <../resvg>` 
