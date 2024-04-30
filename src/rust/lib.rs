@@ -169,7 +169,7 @@ fn svg_to_base64(
             .unwrap();
         if svg_data.starts_with(&[0x1f, 0x8b]) {
             svg_data = resvg::usvg::decompress_svgz(&svg_data)
-                .map_err(|e| e.to_string())
+                .map_err(|_| "can't decompress the svg file")
                 .unwrap();
         };
         svg_string = std::str::from_utf8(&svg_data).unwrap().to_owned();
