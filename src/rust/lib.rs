@@ -164,9 +164,7 @@ fn svg_to_base64(
     let svg_string: String;
 
     if std::path::Path::new(&svg).exists() {
-        let mut svg_data = std::fs::read(svg)
-            .map_err(|_| "failed to open the provided file")
-            .unwrap();
+        let mut svg_data = std::fs::read(&svg).expect("failed to open the provided file");
         if svg_data.starts_with(&[0x1f, 0x8b]) {
             svg_data = resvg::usvg::decompress_svgz(&svg_data)
                 .map_err(|_| "can't decompress the svg file")
