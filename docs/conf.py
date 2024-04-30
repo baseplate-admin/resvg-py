@@ -10,7 +10,7 @@ import datetime
 project = "resvg_py"
 author = "baseplate-admin"
 copyright = f"2024-{datetime.date.today().year}, {author}"
-release = "0.1.2"
+release = "0.1.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
