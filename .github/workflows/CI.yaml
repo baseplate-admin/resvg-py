@@ -56,7 +56,6 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install --upgrade "pip<20"
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
                   pytest
@@ -70,7 +69,6 @@ jobs:
                   install: |
                       apt-get update
                       apt-get install -y --no-install-recommends python3 python3-pip
-                      pip3 install --upgrade "pip<20"
                       pip3 install -U pip pytest
                   run: |
                       set -e
@@ -108,7 +106,6 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install --upgrade "pip<20"
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
                   pytest
@@ -143,7 +140,6 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install --upgrade "pip<20"
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
                   pytest
