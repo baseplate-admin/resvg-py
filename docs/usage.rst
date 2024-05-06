@@ -30,7 +30,7 @@ We can convert it to `PNG` by:
         </svg>
     """
 
-    print(resvg_py.svg_to_base64(svg_string)) 
+    print(resvg_py.svg_to_base64(svg_string=svg_string)) 
 
 
 This should return the following **PNG** image (check using inspect element):
@@ -51,7 +51,7 @@ We can also do something like this :
 
     svg = ... # path to svg file
 
-    print(resvg_py.svg_to_base64(svg)) 
+    print(resvg_py.svg_to_base64(svg_path=svg)) 
 
 
 
