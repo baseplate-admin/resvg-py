@@ -8,14 +8,12 @@ name: CI
 on:
     push:
         branches:
-            - "*"
+            - main
+            - master
         tags:
             - '*'
     pull_request:
     workflow_dispatch:
-
-env:
-    RUST_BACKTRACE: "full"
 
 permissions:
     contents: read
@@ -24,7 +22,6 @@ jobs:
     linux:
         runs-on: ${{ matrix.platform.runner }}
         strategy:
-            fail-fast: false
             matrix:
                 platform:
                     - runner: ubuntu-latest
@@ -35,6 +32,8 @@ jobs:
                       target: aarch64
                     - runner: ubuntu-latest
                       target: armv7
+                    - runner: ubuntu-latest
+                      target: s390x
                     - runner: ubuntu-latest
                       target: ppc64le
         steps:
@@ -61,10 +60,10 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -rP
+                  pytest
             - name: pytest
               if: ${{ !startsWith(matrix.platform.target, 'x86') && matrix.platform.target != 'ppc64' }}
-              uses: uraimo/run-on-arch-action@v2.7.2
+              uses: uraimo/run-on-arch-action@v2.5.0
               with:
                   arch: ${{ matrix.platform.target }}
                   distro: ubuntu22.04
@@ -76,7 +75,7 @@ jobs:
                   run: |
                       set -e
                       pip3 install resvg_py --find-links dist --force-reinstall
-                      pytest -rP
+                      pytest
 
     windows:
         runs-on: ${{ matrix.platform.runner }}
@@ -111,7 +110,7 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -rP
+                  pytest
 
     macos:
         runs-on: ${{ matrix.platform.runner }}
@@ -145,7 +144,7 @@ jobs:
                   set -e
                   pip install resvg_py --find-links dist --force-reinstall
                   pip install pytest
-                  pytest -rP
+                  pytest
 
     sdist:
         runs-on: ubuntu-latest
