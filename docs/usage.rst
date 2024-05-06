@@ -55,6 +55,7 @@ We can also do something like this :
 
 
 
+But please do note that `resvg` first looks for *svg_string* and if that is empty then it looks for *svg_path*
 
 
 For extra parameters refer to :doc:`resvg <../resvg>` 
