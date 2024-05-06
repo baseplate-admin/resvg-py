@@ -135,7 +135,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 #[pyfunction]
 #[pyo3(name = "svg_to_base64")]
 fn svg_to_base64(
-    svg: String,
+    svg_string: Option<String>,
+    svg_path: Option<String>,
     // Control width, height, zoom, dpi
     width: Option<u32>,
     height: Option<u32>,
@@ -161,19 +162,31 @@ fn svg_to_base64(
     // Background
     background: Option<String>,
 ) -> PyResult<String> {
-    let svg_string: String;
+    let mut _svg_string = String::new();
 
-    if std::path::Path::new(&svg).exists() {
-        let mut svg_data = std::fs::read(&svg).expect("failed to open the provided file");
-        if svg_data.starts_with(&[0x1f, 0x8b]) {
-            svg_data =
-                resvg::usvg::decompress_svgz(&svg_data).expect("can't decompress the svg file");
-        };
-        svg_string = std::str::from_utf8(&svg_data)
-            .expect("can't convert bytes to utf-8")
-            .to_owned();
-    } else {
-        svg_string = svg;
+    if let Some(svg_string) = svg_string {
+        _svg_string = svg_string;
+    }
+
+    // Only check for path if provided string is empty
+    if _svg_string.is_empty() {
+        if let Some(svg_path) = svg_path {
+            if std::path::Path::new(&svg_path).exists() {
+                let mut svg_data =
+                    std::fs::read(&svg_path).expect("failed to open the provided file");
+                if svg_data.starts_with(&[0x1f, 0x8b]) {
+                    svg_data = resvg::usvg::decompress_svgz(&svg_data)
+                        .expect("can't decompress the svg file");
+                };
+                _svg_string = std::str::from_utf8(&svg_data)
+                    .expect("can't convert bytes to utf-8")
+                    .to_owned();
+            }
+        }
+    }
+
+    if _svg_string.is_empty() {
+        panic!("`svg_string` is empty or `svg_path` contains empty invalid svg");
     }
 
     let mut fit_to = FitTo::Original;
@@ -259,7 +272,7 @@ fn svg_to_base64(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, svg_string.trim().to_owned()).unwrap();
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
     Ok(general_purpose::STANDARD.encode(&pixmap))
 }
 

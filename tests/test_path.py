@@ -11,7 +11,7 @@ def test_path():
     path = os.path.join(BASE_DIR, "acid.svg")
     print(path)
 
-    base = resvg_py.svg_to_base64(path)
+    base = resvg_py.svg_to_base64(svg_path=path)
     assert base == svg_output
 
 
@@ -19,7 +19,7 @@ def test_gzip_path():
     path = os.path.join(BASE_DIR, "acid.svg.gz")
     print(path)
 
-    base = resvg_py.svg_to_base64(path)
+    base = resvg_py.svg_to_base64(svg_path=path)
     assert base == svg_output
 
 
