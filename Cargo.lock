@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "resvg_py"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
  "base64",
  "pyo3",
