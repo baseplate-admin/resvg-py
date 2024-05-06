@@ -168,16 +168,20 @@ fn svg_to_base64(
         _svg_string = svg_string;
     }
 
-    if let Some(svg_path) = svg_path {
-        if std::path::Path::new(&svg_path).exists() {
-            let mut svg_data = std::fs::read(&svg_path).expect("failed to open the provided file");
-            if svg_data.starts_with(&[0x1f, 0x8b]) {
-                svg_data =
-                    resvg::usvg::decompress_svgz(&svg_data).expect("can't decompress the svg file");
-            };
-            _svg_string = std::str::from_utf8(&svg_data)
-                .expect("can't convert bytes to utf-8")
-                .to_owned();
+    // Only check for path if provided string is empty
+    if _svg_string.is_empty() {
+        if let Some(svg_path) = svg_path {
+            if std::path::Path::new(&svg_path).exists() {
+                let mut svg_data =
+                    std::fs::read(&svg_path).expect("failed to open the provided file");
+                if svg_data.starts_with(&[0x1f, 0x8b]) {
+                    svg_data = resvg::usvg::decompress_svgz(&svg_data)
+                        .expect("can't decompress the svg file");
+                };
+                _svg_string = std::str::from_utf8(&svg_data)
+                    .expect("can't convert bytes to utf-8")
+                    .to_owned();
+            }
         }
     }
 
