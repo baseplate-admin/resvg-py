@@ -105,13 +105,13 @@ fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_ski
     Ok(pixmap)
 }
 
-fn resvg_magic(mut options: Opts, _svg_string: String) -> Result<Vec<u8>, String> {
+fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = resvg::usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
             ..Default::default()
         };
-        resvg::usvg::roxmltree::Document::parse_with_options(&_svg_string, xml_opt)
+        resvg::usvg::roxmltree::Document::parse_with_options(&svg_string, xml_opt)
             .map_err(|e| e.to_string())
     }
     .unwrap();
