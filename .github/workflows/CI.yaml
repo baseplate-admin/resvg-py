@@ -56,7 +56,7 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install resvg_py --find-links dist --force-reinstall
+                  pip install resvg_py>=0.1.3 --find-links dist --force-reinstall
                   pip install pytest
                   pytest
             - name: pytest
@@ -72,7 +72,7 @@ jobs:
                       pip3 install -U pip pytest
                   run: |
                       set -e
-                      pip3 install resvg_py --find-links dist --force-reinstall
+                      pip3 install resvg_py>=0.1.3 --find-links dist --force-reinstall
                       pytest
 
     windows:
@@ -106,7 +106,7 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install resvg_py --find-links dist  --force-reinstall
+                  pip install resvg_py>=0.1.3 --find-links dist  --force-reinstall
                   pip install pytest
                   pytest
 
@@ -140,7 +140,7 @@ jobs:
               shell: bash
               run: |
                   set -e
-                  pip install resvg_py --find-links dist   --force-reinstall
+                  pip install resvg_py>=0.1.3 --find-links dist   --force-reinstall
                   pip install pytest
                   pytest
 
