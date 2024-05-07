@@ -161,7 +161,7 @@ fn svg_to_base64(
     image_rendering: Option<String>,
     // Background
     background: Option<String>,
-) -> PyResult<String> {
+) -> PyResult<Vec<u8>> {
     let mut _svg_string = String::new();
 
     if let Some(svg_string) = svg_string {
@@ -273,7 +273,7 @@ fn svg_to_base64(
         font_dirs,
     };
     let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
-    Ok(general_purpose::STANDARD.encode(&pixmap))
+    Ok(pixmap)
 }
 
 /// A Python module implemented in Rust.
