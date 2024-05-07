@@ -4,7 +4,6 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use base64::{engine::general_purpose, Engine as _};
 use pyo3::prelude::*;
 use resvg;
 
@@ -133,8 +132,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 }
 
 #[pyfunction]
-#[pyo3(name = "svg_to_base64")]
-fn svg_to_base64(
+#[pyo3(name = "svg_to_bytes")]
+fn svg_to_bytes(
     svg_string: Option<String>,
     svg_path: Option<String>,
     // Control width, height, zoom, dpi
@@ -279,6 +278,6 @@ fn svg_to_base64(
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(svg_to_base64, m)?)?;
+    m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     Ok(())
 }
