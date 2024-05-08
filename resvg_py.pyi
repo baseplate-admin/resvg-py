@@ -26,4 +26,7 @@ def svg_to_bytes(
         "optimize_quality"
     ],
     background: str | None = None,
-) -> list[bytes]: ...
+) -> list[bytes]:
+    """"""
+
+    ...

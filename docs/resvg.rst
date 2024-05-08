@@ -1,4 +1,7 @@
 Resvg Module
 ============
 
-.. currentmodule:: resvg_py.svg_to_bytes
+.. currentmodule:: resvg_py
+
+.. autofunction:: svg_to_bytes
+
