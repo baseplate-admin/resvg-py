@@ -16,13 +16,13 @@ def svg_to_bytes(
     monospace_family: str | None = None,
     font_files: list[str] | None = None,
     font_dirs: list[str] | None = None,
-    shape_rendering: Literal["optimize_speed"]
-    | Literal["crisp_edges"]
-    | Literal["geometric_precision"] = Literal["geometric_precision"],
-    text_rendering: Literal["optimize_speed"]
-    | Literal["optimize_legibility"]
-    | Literal["geometric_precision"] = Literal["optimize_legibility"],
-    image_rendering: Literal["optimize_quality"] | Literal["optimize_speed"] = Literal[
+    shape_rendering: Literal[
+        "optimize_speed", "crisp_edges", "geometric_precision"
+    ] = Literal["geometric_precision"],
+    text_rendering: Literal[
+        "optimize_speed", "optimize_legibility", "optimize_legibility"
+    ] = Literal["optimize_legibility"],
+    image_rendering: Literal["optimize_quality", "optimize_speed"] = Literal[
         "optimize_quality"
     ],
     background: str | None = None,
