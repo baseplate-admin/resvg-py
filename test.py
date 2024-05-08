@@ -1,4 +1,5 @@
 import resvg_py
+import orjson
 
 svg_string = """
     <svg width="300" height="130" xmlns="http://www.w3.org/2000/svg">
