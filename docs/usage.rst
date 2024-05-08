@@ -30,7 +30,27 @@ We can convert it to `PNG` by:
         </svg>
     """
 
-    print(resvg_py.svg_to_base64(svg_string=svg_string)) 
+    png_bytes: list[bytes] = resvg_py.svg_to_bytes(svg_string=svg_string) # a large list of bytes 
+
+
+
+In order to convert image to base64:
+
+.. code-block:: python
+
+    import resvg_py
+    import base64
+
+    svg_string = """
+        <svg width="300" height="130" xmlns="http://www.w3.org/2000/svg">
+          <rect width="200" height="100" x="10" y="10" rx="20" ry="20" fill="blue" />
+        </svg>
+    """
+
+    # a large list of bytes
+    png_bytes: list[bytes] = resvg_py.svg_to_bytes(svg_string=svg_string)
+    base64_utf8_str = base64.b64encode(bytes(png_bytes)).decode("utf-8")
+    print(f"data:image/png;base64,{base64_utf8_str}")
 
 
 This should return the following **PNG** image (check using inspect element):
@@ -51,7 +71,7 @@ We can also do something like this :
 
     svg = ... # path to svg file
 
-    print(resvg_py.svg_to_base64(svg_path=svg)) 
+    print(resvg_py.svg_to_bytes(svg_path=svg)) 
 
 
 

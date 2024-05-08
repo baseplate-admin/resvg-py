@@ -22,7 +22,7 @@ svg_string = """
     </svg>
 """
 
-print(resvg_py.svg_to_base64(svg_string=svg_string))
+print(resvg_py.svg_to_bytes(svg_string=svg_string))
 
 ```
 
