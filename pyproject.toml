@@ -15,6 +15,7 @@ pytest = "^8.1.1"
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.2.6"
 furo = "^2024.1.29"
+sphinx-reload = "^0.2.0"
 
 [build-system]
 requires = ["maturin>=1.4,<2.0"]
