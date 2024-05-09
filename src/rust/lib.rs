@@ -88,6 +88,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
     resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
+
 fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
@@ -112,25 +113,22 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         };
         resvg::usvg::roxmltree::Document::parse_with_options(&svg_string, xml_opt)
             .map_err(|e| e.to_string())
-    }
-    .unwrap();
+    }?;
     let has_text_nodes = xml_tree
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    print!("{:#}", has_text_nodes);
-    
     let mut fontdb = resvg::usvg::fontdb::Database::new();
     if has_text_nodes {
         load_fonts(&mut options, &mut fontdb);
     }
+
     let tree = {
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
             .map_err(|e| e.to_string())
     }
     .unwrap();
-    let img: Vec<u8> = render_svg(options, &tree).unwrap().encode_png().unwrap();
-    Ok(img)
+    Ok(render_svg(options, &tree)?.encode_png().unwrap())
 }
 
 #[pyfunction]
