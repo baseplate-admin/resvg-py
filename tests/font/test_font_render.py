@@ -42,3 +42,6 @@ def test_wtih_kokoro_font():
     ).decode("utf-8")
 
     assert base == output_dict["svg_with_kokoro_font_output"]
+
+
+test_wtih_kokoro_font()

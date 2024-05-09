@@ -384,6 +384,7 @@ dependencies = [
 name = "resvg_py"
 version = "0.1.4"
 dependencies = [
+ "log",
  "pyo3",
  "resvg",
  "svgtypes",
