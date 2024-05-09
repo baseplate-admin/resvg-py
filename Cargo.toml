@@ -20,5 +20,8 @@ svgtypes = "0.15.0"
 opt-level = 3
 
 [profile.release]
+panic = "abort"
+codegen-units = 1
 lto = "fat"
-opt-level = 3
+opt-level ='z'
+strip = true
