@@ -118,6 +118,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
+    print!("{:#}", has_text_nodes);
+    
     let mut fontdb = resvg::usvg::fontdb::Database::new();
     if has_text_nodes {
         load_fonts(&mut options, &mut fontdb);
