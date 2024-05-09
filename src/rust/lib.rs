@@ -21,6 +21,38 @@ enum FitTo {
     Zoom(f32),
 }
 
+/// A simple stderr logger.
+static LOGGER: SimpleLogger = SimpleLogger;
+struct SimpleLogger;
+impl log::Log for SimpleLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::LevelFilter::Warn
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let target = if !record.target().is_empty() {
+                record.target()
+            } else {
+                record.module_path().unwrap_or_default()
+            };
+
+            let line = record.line().unwrap_or(0);
+            let args = record.args();
+
+            match record.level() {
+                log::Level::Error => println!("Error (in {}:{}): {}", target, line, args),
+                log::Level::Warn => println!("Warning (in {}:{}): {}", target, line, args),
+                log::Level::Info => println!("Info (in {}:{}): {}", target, line, args),
+                log::Level::Debug => println!("Debug (in {}:{}): {}", target, line, args),
+                log::Level::Trace => println!("Trace (in {}:{}): {}", target, line, args),
+            }
+        }
+    }
+
+    fn flush(&self) {}
+}
+
 impl FitTo {
     fn fit_to_size(&self, size: resvg::tiny_skia::IntSize) -> Option<resvg::tiny_skia::IntSize> {
         match *self {
@@ -300,36 +332,4 @@ fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
-}
-
-/// A simple stderr logger.
-static LOGGER: SimpleLogger = SimpleLogger;
-struct SimpleLogger;
-impl log::Log for SimpleLogger {
-    fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.level() <= log::LevelFilter::Warn
-    }
-
-    fn log(&self, record: &log::Record) {
-        if self.enabled(record.metadata()) {
-            let target = if !record.target().is_empty() {
-                record.target()
-            } else {
-                record.module_path().unwrap_or_default()
-            };
-
-            let line = record.line().unwrap_or(0);
-            let args = record.args();
-
-            match record.level() {
-                log::Level::Error => println!("Error (in {}:{}): {}", target, line, args),
-                log::Level::Warn => println!("Warning (in {}:{}): {}", target, line, args),
-                log::Level::Info => println!("Info (in {}:{}): {}", target, line, args),
-                log::Level::Debug => println!("Debug (in {}:{}): {}", target, line, args),
-                log::Level::Trace => println!("Trace (in {}:{}): {}", target, line, args),
-            }
-        }
-    }
-
-    fn flush(&self) {}
 }
