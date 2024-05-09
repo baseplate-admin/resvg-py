@@ -15,6 +15,7 @@ Safe bindings for `resvg <https://github.com/RazrFalcon/resvg>`_
    installation
    usage
    resvg
+   debugging
    contributing
 
 Indices and tables

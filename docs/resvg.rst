@@ -5,4 +5,4 @@ Resvg Module
 
 .. autofunction:: svg_to_bytes
 
-.. autofuncton:: version
+.. autofunction:: version
