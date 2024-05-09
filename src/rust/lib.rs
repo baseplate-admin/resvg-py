@@ -167,38 +167,64 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 }
 
 #[pyfunction]
-#[pyo3(name = "svg_to_bytes")]
+#[pyo3(signature = ( 
+    svg_string= None,
+    svg_path = None,
+    background = None,
+    skip_system_fonts= false,
+    log_information = false,
+    width = None,
+    height= None,
+    zoom = None,
+    dpi = 0,
+    resources_dir = None,
+    languages = vec![],
+    font_size = 16,
+    font_family = "Times New Roman",
+    serif_family = "Times New Roman",
+    sans_serif_family = "Arial",
+    cursive_family = "Comic Sans MS",
+    fantasy_family = "Impact",
+    monospace_family = "Courier New",
+    font_files = None,
+    font_dirs = None,
+    shape_rendering = "geometric_precision",
+    text_rendering = "optimize_legibility",
+    image_rendering = "optimize_quality",
+    ))]
 fn svg_to_bytes(
     svg_string: Option<String>,
     svg_path: Option<String>,
+    // Background
+    background: Option<String>,
+    // Skip System Fonts
+    skip_system_fonts: Option<bool>,
+    // Log informations
+    log_information: Option<bool>,
     // Control width, height, zoom, dpi
     width: Option<u32>,
     height: Option<u32>,
     zoom: Option<u32>,
     dpi: Option<u32>,
-    // Log informations
-    log_information: Option<bool>,
+
     // Resource Directory
     resources_dir: Option<String>,
     // Fonts
     languages: Option<Vec<String>>,
     font_size: Option<u32>,
-    font_family: Option<String>,
-    serif_family: Option<String>,
-    sans_serif_family: Option<String>,
-    cursive_family: Option<String>,
-    fantasy_family: Option<String>,
-    monospace_family: Option<String>,
+    font_family: Option<&str>,
+    serif_family: Option<&str>,
+    sans_serif_family: Option<&str>,
+    cursive_family: Option<&str>,
+    fantasy_family: Option<&str>,
+    monospace_family: Option<&str>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // Effects based
-    shape_rendering: Option<String>,
-    text_rendering: Option<String>,
-    image_rendering: Option<String>,
-    // Background
-    background: Option<String>,
-    // Skip System Fonts
-    skip_system_fonts: Option<bool>,
+    shape_rendering: Option<&str>,
+    text_rendering: Option<&str>,
+    image_rendering: Option<&str>,
+
 ) -> PyResult<Vec<u8>> {
     if log_information.unwrap_or(false) {
         if let Ok(()) = log::set_logger(&LOGGER) {
@@ -250,7 +276,7 @@ fn svg_to_bytes(
     }
 
     let _shape_rendering = match shape_rendering
-        .unwrap_or("geometric_precision".to_string())
+        .unwrap_or("geometric_precision")
         .as_ref()
     {
         "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
@@ -260,7 +286,7 @@ fn svg_to_bytes(
     };
 
     let _text_rendering = match text_rendering
-        .unwrap_or("optimize_legibility".to_string())
+        .unwrap_or("optimize_legibility")
         .as_ref()
     {
         "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
@@ -270,7 +296,7 @@ fn svg_to_bytes(
     };
 
     let _image_rendering = match image_rendering
-        .unwrap_or("optimize_quality".to_string())
+        .unwrap_or("optimize_quality")
         .as_ref()
     {
         "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
@@ -294,7 +320,7 @@ fn svg_to_bytes(
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
-        font_family: font_family.unwrap_or("Times New Roman".to_owned()),
+        font_family: font_family.unwrap_or("Times New Roman").to_string(),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
@@ -304,16 +330,18 @@ fn svg_to_bytes(
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
     };
 
+
+
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
         skip_system_fonts: skip_system_fonts.unwrap_or(false),
         fit_to,
-        serif_family,
-        sans_serif_family,
-        cursive_family,
-        fantasy_family,
-        monospace_family,
+        serif_family:serif_family.map(|s|s.to_string()),
+        sans_serif_family:sans_serif_family.map(|s|s.to_string()),
+        cursive_family:cursive_family.map(|s|s.to_string()),
+        fantasy_family:fantasy_family.map(|s|s.to_string()),
+        monospace_family:monospace_family.map(|s|s.to_string()),
         font_files,
         font_dirs,
     };
