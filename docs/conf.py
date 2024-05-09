@@ -6,11 +6,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import datetime
+import resvg_py
 
 project = "resvg_py"
 author = "baseplate-admin"
 copyright = f"2024-{datetime.date.today().year}, {author}"
-release = "0.1.3"
+release = resvg_py.version()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

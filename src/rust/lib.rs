@@ -54,11 +54,11 @@ struct Opts {
     background: Option<svgtypes::Color>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
-    // skip_system_fonts: bool,
     // Abstract Classes
     fit_to: FitTo,
     usvg_opt: resvg::usvg::Options,
     // Renderers
+    skip_system_fonts: bool,
 }
 
 fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
@@ -88,6 +88,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
     resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
+
 fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
@@ -112,23 +113,25 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         };
         resvg::usvg::roxmltree::Document::parse_with_options(&svg_string, xml_opt)
             .map_err(|e| e.to_string())
-    }
-    .unwrap();
+    }?;
     let has_text_nodes = xml_tree
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
     let mut fontdb = resvg::usvg::fontdb::Database::new();
+    if !options.skip_system_fonts {
+        fontdb.load_system_fonts();
+    }
+
     if has_text_nodes {
         load_fonts(&mut options, &mut fontdb);
     }
+
     let tree = {
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
             .map_err(|e| e.to_string())
-    }
-    .unwrap();
-    let img: Vec<u8> = render_svg(options, &tree).unwrap().encode_png().unwrap();
-    Ok(img)
+    }?;
+    Ok(render_svg(options, &tree)?.encode_png().unwrap())
 }
 
 #[pyfunction]
@@ -160,6 +163,8 @@ fn svg_to_bytes(
     image_rendering: Option<String>,
     // Background
     background: Option<String>,
+    // Skip System Fonts
+    skip_system_fonts: Option<bool>,
 ) -> PyResult<Vec<u8>> {
     let mut _svg_string = String::new();
 
@@ -234,7 +239,7 @@ fn svg_to_bytes(
     };
 
     let _resources_dir = match resources_dir {
-        Some(value) => Some(std::fs::canonicalize(value).unwrap()),
+        Some(value) => Some(std::fs::canonicalize(value)?),
         None => None,
     };
 
@@ -262,6 +267,7 @@ fn svg_to_bytes(
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
+        skip_system_fonts: skip_system_fonts.unwrap_or(false),
         fit_to,
         serif_family,
         sans_serif_family,
@@ -275,9 +281,15 @@ fn svg_to_bytes(
     Ok(pixmap)
 }
 
+#[pyfunction]
+#[pyo3(name = "version")]
+fn version() -> PyResult<String> {
+    Ok(env!("CARGO_PKG_VERSION").to_owned())
+}
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }

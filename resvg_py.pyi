@@ -26,6 +26,7 @@ def svg_to_bytes(
         "optimize_quality"
     ],
     background: str | None = None,
+    skip_system_fonts: bool | None = None,
 ) -> list[bytes]:
     """
     :param svg_str: A string containing valid svg.
@@ -52,3 +53,5 @@ def svg_to_bytes(
     """
 
     ...
+
+def version() -> str: ...
