@@ -44,4 +44,4 @@ features = ["pyo3/extension-module"]
 [tool.poe.tasks]
 test = "pytest . -rP"
 "build:release" = "maturin build --release"
-"develop" = "maturin build"
+"dev" = "maturin build"
