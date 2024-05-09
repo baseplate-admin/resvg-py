@@ -3,17 +3,22 @@ from typing import Literal
 def svg_to_bytes(
     svg_string: str | None = None,
     svg_path: str | None = None,
+    background: str | None = None,
+    skip_system_fonts: bool | None = False,
+    log_information: bool = False,
     width: int | None = None,
     height: int | None = None,
+    zoom: int | None = None,
+    dpi: int | None = 0,
     resources_dir: str | None = None,
-    languages: list[str] | None = None,
-    font_size: int | None = None,
-    font_family: str | None = None,
-    serif_family: str | None = None,
-    sans_serif_family: str | None = None,
-    cursive_family: str | None = None,
-    fantasy_family: str | None = None,
-    monospace_family: str | None = None,
+    languages: list[str] | None = [],
+    font_size: int | None = 16,
+    font_family: str | None = Literal["Times New Roman"],
+    serif_family: str | None = Literal["Times New Roman"],
+    sans_serif_family: str | None = Literal["Arial"],
+    cursive_family: str | None = Literal["Comic Sans MS"],
+    fantasy_family: str | None = ["Impact"],
+    monospace_family: str | None = Literal["Courier New"],
     font_files: list[str] | None = None,
     font_dirs: list[str] | None = None,
     shape_rendering: Literal[
@@ -25,8 +30,6 @@ def svg_to_bytes(
     image_rendering: Literal["optimize_quality", "optimize_speed"] = Literal[
         "optimize_quality"
     ],
-    background: str | None = None,
-    skip_system_fonts: bool | None = None,
 ) -> list[bytes]:
     """
     :param svg_str: A string containing valid svg.

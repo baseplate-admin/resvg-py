@@ -10,14 +10,20 @@ path = "src/rust/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
+log = "0.4.21"
 pyo3 = "0.21.2"
 resvg = { version = "0.41.0", features = ["raster-images","text"] }
 svgtypes = "0.15.1"
 
 
 [profile.release.package."*"]
-opt-level = 3
+codegen-units = 1
+opt-level ='z'
+strip = true
 
 [profile.release]
+panic = "abort"
+codegen-units = 1
 lto = "fat"
-opt-level = 3
+opt-level ='z'
+strip = true

@@ -65,7 +65,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     if let Some(font_files) = &options.font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
-                println!("Failed to load '{}' cause {}.", path.to_string(), e);
+                log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
             }
         }
     }
@@ -144,6 +144,8 @@ fn svg_to_bytes(
     height: Option<u32>,
     zoom: Option<u32>,
     dpi: Option<u32>,
+    // Log informations
+    log_information: Option<bool>,
     // Resource Directory
     resources_dir: Option<String>,
     // Fonts
@@ -166,6 +168,12 @@ fn svg_to_bytes(
     // Skip System Fonts
     skip_system_fonts: Option<bool>,
 ) -> PyResult<Vec<u8>> {
+    if log_information.unwrap_or(false) {
+        if let Ok(()) = log::set_logger(&LOGGER) {
+            log::set_max_level(log::LevelFilter::Warn);
+        }
+    }
+
     let mut _svg_string = String::new();
 
     if let Some(svg_string) = svg_string {
@@ -254,7 +262,7 @@ fn svg_to_bytes(
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
-        font_family: font_family.unwrap_or_else(|| "Times New Roman".to_string()),
+        font_family: font_family.unwrap_or("Times New Roman".to_owned()),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
@@ -292,4 +300,36 @@ fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
+}
+
+/// A simple stderr logger.
+static LOGGER: SimpleLogger = SimpleLogger;
+struct SimpleLogger;
+impl log::Log for SimpleLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::LevelFilter::Warn
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let target = if !record.target().is_empty() {
+                record.target()
+            } else {
+                record.module_path().unwrap_or_default()
+            };
+
+            let line = record.line().unwrap_or(0);
+            let args = record.args();
+
+            match record.level() {
+                log::Level::Error => println!("Error (in {}:{}): {}", target, line, args),
+                log::Level::Warn => println!("Warning (in {}:{}): {}", target, line, args),
+                log::Level::Info => println!("Info (in {}:{}): {}", target, line, args),
+                log::Level::Debug => println!("Debug (in {}:{}): {}", target, line, args),
+                log::Level::Trace => println!("Trace (in {}:{}): {}", target, line, args),
+            }
+        }
+    }
+
+    fn flush(&self) {}
 }
