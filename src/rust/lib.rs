@@ -281,9 +281,15 @@ fn svg_to_bytes(
     Ok(pixmap)
 }
 
+#[pyfunction]
+#[pyo3(name = "version")]
+fn version() -> PyResult<String> {
+    Ok(env!("CARGO_PKG_VERSION").to_owned())
+}
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }
