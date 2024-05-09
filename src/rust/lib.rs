@@ -54,11 +54,11 @@ struct Opts {
     background: Option<svgtypes::Color>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
-    // skip_system_fonts: bool,
     // Abstract Classes
     fit_to: FitTo,
     usvg_opt: resvg::usvg::Options,
     // Renderers
+    skip_system_fonts: bool,
 }
 
 fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
@@ -119,6 +119,10 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
     let mut fontdb = resvg::usvg::fontdb::Database::new();
+    if !options.skip_system_fonts {
+        fontdb.load_system_fonts();
+    }
+
     if has_text_nodes {
         load_fonts(&mut options, &mut fontdb);
     }
@@ -126,8 +130,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     let tree = {
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
             .map_err(|e| e.to_string())
-    }
-    .unwrap();
+    }?;
     Ok(render_svg(options, &tree)?.encode_png().unwrap())
 }
 
@@ -160,6 +163,8 @@ fn svg_to_bytes(
     image_rendering: Option<String>,
     // Background
     background: Option<String>,
+    // Skip System Fonts
+    skip_system_fonts: Option<bool>,
 ) -> PyResult<Vec<u8>> {
     let mut _svg_string = String::new();
 
@@ -234,7 +239,7 @@ fn svg_to_bytes(
     };
 
     let _resources_dir = match resources_dir {
-        Some(value) => Some(std::fs::canonicalize(value).unwrap()),
+        Some(value) => Some(std::fs::canonicalize(value)?),
         None => None,
     };
 
@@ -262,6 +267,7 @@ fn svg_to_bytes(
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
+        skip_system_fonts: skip_system_fonts.unwrap_or(false),
         fit_to,
         serif_family,
         sans_serif_family,
