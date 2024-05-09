@@ -1,2 +1,2 @@
-tests/*.py linguist-vendored
+tests/**/* linguist-vendored
 docs/**/* linguist-documentation
