@@ -6,7 +6,7 @@
 Welcome to resvg_py's documentation!
 ========================================
 
-Safe bindings for `resvg <https://github.com/RazrFalcon/resvg>`_
+Safe bindings for `resvg`_
 
 .. toctree::
    :maxdepth: 2
@@ -23,3 +23,6 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
+
+
+.. _resvg: https://docs.rs/resvg/latest/resvg/
