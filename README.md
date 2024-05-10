@@ -26,7 +26,7 @@ print(resvg_py.svg_to_bytes(svg_string=svg_string))
 
 ```
 
-(if you want a more complex solution please check the [api](https://resvg-py.readthedocs.io/en/latest/resvg.html). It exposes everything resvg has.)
+(if you want a more complex solution please check the [api](https://resvg-py.readthedocs.io/en/latest/resvg.html) or [usage](https://resvg-py.readthedocs.io/en/latest/usage.html). It exposes everything resvg has.)
 
 ## Requires
 
