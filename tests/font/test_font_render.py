@@ -17,7 +17,9 @@ output_dict = {
 
 def test_with_system_font():
     path = os.path.join(BASE_DIR, "ink.svg")
-    base = base64.b64encode(bytes(resvg_py.svg_to_bytes(svg_path=path))).decode("utf-8")
+    base = base64.b64encode(
+        bytes(resvg_py.svg_to_bytes(svg_path=path)),
+    ).decode("utf-8")
 
     assert base == output_dict["svg_font_output"]
 
@@ -32,11 +34,25 @@ def test_without_system_font():
 
 def test_wtih_kokoro_font():
     path = os.path.join(BASE_DIR, "ink.svg")
-    font = str(Path(BASE_DIR, "Kokoro-Regular.ttf"))
+    font = str(Path(BASE_DIR, "font_dir", "Kokoro-Regular.ttf"))
     base = base64.b64encode(
         bytes(
             resvg_py.svg_to_bytes(
                 svg_path=path, skip_system_fonts=True, font_files=[font]
+            )
+        )
+    ).decode("utf-8")
+
+    assert base == output_dict["svg_with_kokoro_font_output"]
+
+
+def test_font_directory():
+    path = os.path.join(BASE_DIR, "ink.svg")
+    font = str(Path(BASE_DIR, "font_dir"))
+    base = base64.b64encode(
+        bytes(
+            resvg_py.svg_to_bytes(
+                svg_path=path, skip_system_fonts=True, font_dirs=[font]
             )
         )
     ).decode("utf-8")
