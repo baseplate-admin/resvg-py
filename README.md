@@ -31,3 +31,7 @@ print(resvg_py.svg_to_bytes(svg_string=svg_string))
 ## Requires
 
 -   Python 3.8 or higher
+
+---
+
+This library is feature complete in my opinion.
