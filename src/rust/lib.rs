@@ -7,6 +7,7 @@ Based on
 use pyo3::prelude::*;
 use resvg;
 
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
     /// Keep original size.
@@ -351,13 +352,17 @@ fn svg_to_bytes(
 
 #[pyfunction]
 #[pyo3(name = "version")]
-fn version() -> PyResult<String> {
-    Ok(env!("CARGO_PKG_VERSION").to_owned())
+fn get_version() -> &'static str {
+    static VERSION :  std::sync::OnceLock<String> =  std::sync::OnceLock::new();
+
+    VERSION.get_or_init(||{
+        env!("CARGO_PKG_VERSION").to_owned()
+    })
 }
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__version__",get_version())?;
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
-    m.add_function(wrap_pyfunction!(version, m)?)?;
     Ok(())
 }

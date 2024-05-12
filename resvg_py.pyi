@@ -1,5 +1,8 @@
 from typing import Literal
 
+
+__version__ : str
+
 def svg_to_bytes(
     svg_string: str | None = None,
     svg_path: str | None = None,
@@ -56,5 +59,3 @@ def svg_to_bytes(
     """
 
     ...
-
-def version() -> str: ...
