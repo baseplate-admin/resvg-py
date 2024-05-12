@@ -11,7 +11,7 @@ import resvg_py
 project = "resvg_py"
 author = "baseplate-admin"
 copyright = f"2024-{datetime.date.today().year}, {author}"
-release = resvg_py.version()
+release = resvg_py.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
