@@ -350,8 +350,6 @@ fn svg_to_bytes(
     Ok(pixmap)
 }
 
-#[pyfunction]
-#[pyo3(name = "version")]
 fn get_version() -> &'static str {
     static VERSION :  std::sync::OnceLock<String> =  std::sync::OnceLock::new();
 
@@ -359,6 +357,7 @@ fn get_version() -> &'static str {
         env!("CARGO_PKG_VERSION").to_owned()
     })
 }
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
