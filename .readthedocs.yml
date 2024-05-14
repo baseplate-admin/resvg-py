@@ -7,7 +7,7 @@ version: 2
 
 # Set the OS, Python version and other tools you might need
 build:
-    os: ubuntu-latest-lts
+    os: ubuntu-lts-latest
     tools:
         python: 'latest'
         rust: 'latest'
