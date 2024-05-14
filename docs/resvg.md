@@ -8,4 +8,7 @@
 
 .. autoclass:: __version__
 
+
+.. autoclass:: __author__
+
 ```

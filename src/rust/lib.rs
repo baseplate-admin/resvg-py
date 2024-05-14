@@ -358,10 +358,20 @@ fn get_version() -> &'static str {
     })
 }
 
+fn get_author() -> &'static str {
+    static AUTHOR : std::sync::OnceLock<String>  = std::sync::OnceLock::new();
+
+    AUTHOR.get_or_init(||{
+        
+        env!("CARGO_PKG_AUTHORS").to_owned()
+    })
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__",get_version())?;
+    m.add("__author__", get_author())?;
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     Ok(())
 }

@@ -9,7 +9,7 @@ import datetime
 import resvg_py
 
 project = "resvg_py"
-author = "baseplate-admin"
+author = resvg_py.__author__
 copyright = f"2024-{datetime.date.today().year}, {author}"
 release = resvg_py.__version__
 
