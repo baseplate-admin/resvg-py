@@ -7,7 +7,6 @@ Based on
 use pyo3::prelude::*;
 use resvg;
 
-
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
     /// Keep original size.
@@ -168,34 +167,9 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 }
 
 #[pyfunction]
-#[pyo3(signature = ( 
-    svg_string= None,
-    svg_path = None,
-    background = None,
-    skip_system_fonts= false,
-    log_information = false,
-    width = None,
-    height= None,
-    zoom = None,
-    dpi = 0,
-    resources_dir = None,
-    languages = vec![],
-    font_size = 16,
-    font_family = "Times New Roman".to_owned(),
-    serif_family = "Times New Roman".to_owned(),
-    sans_serif_family = "Arial".to_owned(),
-    cursive_family = "Comic Sans MS".to_owned(),
-    fantasy_family = "Impact".to_owned(),
-    monospace_family = "Courier New".to_owned(),
-    font_files = None,
-    font_dirs = None,
-    shape_rendering = "geometric_precision".to_owned(),
-    text_rendering = "optimize_legibility".to_owned(),
-    image_rendering = "optimize_quality".to_owned(),
-    ))]
-fn svg_to_bytes(
-    svg_string: Option<String>,
-    svg_path: Option<String>,
+
+fn _svg_to_bytes(
+    svg_string: String,
     // Background
     background: Option<String>,
     // Skip System Fonts
@@ -215,49 +189,21 @@ fn svg_to_bytes(
     font_size: Option<u32>,
     font_family: Option<String>,
     serif_family: Option<String>,
-    sans_serif_family:Option<String>,
+    sans_serif_family: Option<String>,
     cursive_family: Option<String>,
     fantasy_family: Option<String>,
-    monospace_family:Option<String>,
+    monospace_family: Option<String>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // Effects based
-    shape_rendering:Option<String>,
+    shape_rendering: Option<String>,
     text_rendering: Option<String>,
     image_rendering: Option<String>,
-
 ) -> PyResult<Vec<u8>> {
     if log_information.unwrap_or(false) {
         if let Ok(()) = log::set_logger(&LOGGER) {
             log::set_max_level(log::LevelFilter::Warn);
         }
-    }
-
-    let mut _svg_string = String::new();
-
-    if let Some(svg_string) = svg_string {
-        _svg_string = svg_string;
-    }
-
-    // Only check for path if provided string is empty
-    if _svg_string.is_empty() {
-        if let Some(svg_path) = svg_path {
-            if std::path::Path::new(&svg_path).exists() {
-                let mut svg_data =
-                    std::fs::read(&svg_path).expect("failed to open the provided file");
-                if svg_data.starts_with(&[0x1f, 0x8b]) {
-                    svg_data = resvg::usvg::decompress_svgz(&svg_data)
-                        .expect("can't decompress the svg file");
-                };
-                _svg_string = std::str::from_utf8(&svg_data)
-                    .expect("can't convert bytes to utf-8")
-                    .to_owned();
-            }
-        }
-    }
-
-    if _svg_string.is_empty() {
-        panic!("`svg_string` is empty or `svg_path` contains empty invalid svg");
     }
 
     let mut fit_to = FitTo::Original;
@@ -331,47 +277,40 @@ fn svg_to_bytes(
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
     };
 
-
-
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
         skip_system_fonts: skip_system_fonts.unwrap_or(false),
         fit_to,
-        serif_family:serif_family,
-        sans_serif_family:sans_serif_family,
-        cursive_family:cursive_family,
-        fantasy_family:fantasy_family,
-        monospace_family:monospace_family,
+        serif_family: serif_family,
+        sans_serif_family: sans_serif_family,
+        cursive_family: cursive_family,
+        fantasy_family: fantasy_family,
+        monospace_family: monospace_family,
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
+    let pixmap = resvg_magic(options, svg_string.trim().to_owned()).unwrap();
     Ok(pixmap)
 }
 
 fn get_version() -> &'static str {
-    static VERSION :  std::sync::OnceLock<String> =  std::sync::OnceLock::new();
+    static VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
-    VERSION.get_or_init(||{
-        env!("CARGO_PKG_VERSION").to_owned()
-    })
+    VERSION.get_or_init(|| env!("CARGO_PKG_VERSION").to_owned())
 }
 
 fn get_author() -> &'static str {
-    static AUTHOR : std::sync::OnceLock<String>  = std::sync::OnceLock::new();
+    static AUTHOR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 
-    AUTHOR.get_or_init(||{
-        
-        env!("CARGO_PKG_AUTHORS").to_owned()
-    })
+    AUTHOR.get_or_init(|| env!("CARGO_PKG_AUTHORS").to_owned())
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__",get_version())?;
+    m.add("__version__", get_version())?;
     m.add("__author__", get_author())?;
-    m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(_svg_to_bytes, m)?)?;
     Ok(())
 }

@@ -1,11 +1,18 @@
-from typing import Literal
+import os
+import gzip
 
-__version__: str
-__author__: str
+from typing import Literal
+from .resvg_py import _svg_to_bytes, __version__, __author__
+
+__all__ = [
+    __version__,
+    __author__,
+    "svg_to_bytes",
+]
+
 
 def svg_to_bytes(
-    svg_string: str | None = None,
-    svg_path: str | None = None,
+    svg: str,
     background: str | None = None,
     skip_system_fonts: bool | None = False,
     log_information: bool = False,
@@ -16,23 +23,21 @@ def svg_to_bytes(
     resources_dir: str | None = None,
     languages: list[str] | None = [],
     font_size: int | None = 16,
-    font_family: str | None = Literal["Times New Roman"],
-    serif_family: str | None = Literal["Times New Roman"],
-    sans_serif_family: str | None = Literal["Arial"],
-    cursive_family: str | None = Literal["Comic Sans MS"],
-    fantasy_family: str | None = ["Impact"],
-    monospace_family: str | None = Literal["Courier New"],
+    font_family: str | None = "Times New Roman",
+    serif_family: str | None = "Times New Roman",
+    sans_serif_family: str | None = "Arial",
+    cursive_family: str | None = "Comic Sans MS",
+    fantasy_family: str | None = "Impact",
+    monospace_family: str | None = "Courier New",
     font_files: list[str] | None = None,
     font_dirs: list[str] | None = None,
     shape_rendering: Literal[
         "optimize_speed", "crisp_edges", "geometric_precision"
-    ] = Literal["geometric_precision"],
+    ] = "geometric_precision",
     text_rendering: Literal[
         "optimize_speed", "optimize_legibility", "optimize_legibility"
-    ] = Literal["optimize_legibility"],
-    image_rendering: Literal["optimize_quality", "optimize_speed"] = Literal[
-        "optimize_quality"
-    ],
+    ] = "optimize_legibility",
+    image_rendering: Literal["optimize_quality", "optimize_speed"] = "optimize_quality",
 ) -> list[bytes]:
     """
     :param svg_str: A string containing valid svg.
@@ -58,4 +63,39 @@ def svg_to_bytes(
     :param background: A `CSS color <https://developer.mozilla.org/en-US/docs/Web/CSS/color_value>`_ value that describes the canvas size.
     """
 
-    ...
+    if os.path.exists(svg):
+        with open(svg, "rb") as f:
+            try:
+                svg_string = f.read().decode()
+            except UnicodeDecodeError:
+                # File is probably gzip
+                file = gzip.open(f, "rt")
+                svg_string = file.read()
+                print(svg_string)
+    else:
+        svg_string = svg
+
+    return _svg_to_bytes(
+        svg_string,
+        background,
+        skip_system_fonts,
+        log_information,
+        width,
+        height,
+        zoom,
+        dpi,
+        resources_dir,
+        languages,
+        font_size,
+        font_family,
+        serif_family,
+        sans_serif_family,
+        cursive_family,
+        fantasy_family,
+        monospace_family,
+        font_files,
+        font_dirs,
+        shape_rendering,
+        text_rendering,
+        image_rendering,
+    )

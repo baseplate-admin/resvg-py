@@ -89,7 +89,7 @@ output_dict = {
 
 def test_multiple_layer_svg():
     assert (
-        base64.b64encode(bytes(resvg_py.svg_to_bytes(svg_string=svg_string))).decode(
+        base64.b64encode(bytes(resvg_py.svg_to_bytes(svg_string))).decode(
             "utf-8"
         )
         == output_dict["multi_layer"]

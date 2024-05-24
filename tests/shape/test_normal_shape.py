@@ -10,7 +10,7 @@ svg_string = """
 
 def test_rectangle():
     _base64 = base64.b64encode(
-        bytes(resvg_py.svg_to_bytes(svg_string=svg_string))
+        bytes(resvg_py.svg_to_bytes(svg_string))
     ).decode("utf-8")
     assert (
         _base64

@@ -39,6 +39,7 @@ Documentation = "https://resvg-py.readthedocs.io/"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "src/python"
 
 [tool.poe.tasks]
 test = "pytest . -rP"
