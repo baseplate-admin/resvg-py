@@ -4,6 +4,8 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
+
+
 use pyo3::prelude::*;
 use resvg;
 
@@ -77,7 +79,7 @@ impl FitTo {
         )
     }
 }
-struct Opts {
+struct Opts<'a> {
     //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -89,7 +91,7 @@ struct Opts {
     font_dirs: Option<Vec<String>>,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: resvg::usvg::Options,
+    usvg_opt: resvg::usvg::Options<'a>,
     // Renderers
     skip_system_fonts: bool,
 }
@@ -161,7 +163,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     }
 
     let tree = {
-        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
     Ok(render_svg(options, &tree)?.encode_png().unwrap())
@@ -329,6 +331,8 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
+        font_resolver: resvg::usvg::FontResolver::default(),
+        fontdb: std::sync::Arc::new(resvg::usvg::fontdb::Database::new()),
     };
 
 
