@@ -30,17 +30,17 @@ jobs:
         strategy:
             matrix:
                 platform:
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: x86_64
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: x86
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: aarch64
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: armv7
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: s390x
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: ppc64le
         steps:
             - uses: actions/checkout@v4
@@ -65,13 +65,13 @@ jobs:
         strategy:
             matrix:
                 platform:
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: x86_64
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: x86
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: aarch64
-                    - runner: ubuntu-22.04
+                    - runner: ubuntu-latest
                       target: armv7
         steps:
             - uses: actions/checkout@v4
@@ -145,7 +145,7 @@ jobs:
                   path: dist
 
     sdist:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - name: Build sdist
