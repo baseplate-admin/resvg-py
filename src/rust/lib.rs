@@ -77,7 +77,7 @@ impl FitTo {
         )
     }
 }
-struct Opts {
+struct Opts<'a> {
     //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -89,7 +89,7 @@ struct Opts {
     font_dirs: Option<Vec<String>>,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: resvg::usvg::Options,
+    usvg_opt: resvg::usvg::Options<'a>,
     // Renderers
     skip_system_fonts: bool,
 }
@@ -226,6 +226,7 @@ fn svg_to_bytes(
     image_rendering: Option<String>,
 
 ) -> PyResult<Vec<u8>> {
+
     if log_information.unwrap_or(false) {
         if let Ok(()) = log::set_logger(&LOGGER) {
             log::set_max_level(log::LevelFilter::Warn);
@@ -233,6 +234,7 @@ fn svg_to_bytes(
     }
 
     let mut _svg_string = String::new();
+let fontdb = resvg::usvg::fontdb::Database::new().into();
 
     if let Some(svg_string) = svg_string {
         _svg_string = svg_string;
@@ -328,7 +330,7 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
-        fontdb: resvg::usvg::fontdb::Database::new(),
+        fontdb:fontdb,
         font_resolver:FontResolver::default()
     };
 
