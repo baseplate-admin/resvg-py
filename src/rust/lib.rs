@@ -4,10 +4,8 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use std::sync::Arc;
-
 use pyo3::prelude::*;
-use resvg::{self, usvg::{fontdb, FontResolver}};
+use resvg::{self, usvg::FontResolver};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -97,11 +95,10 @@ struct Opts<'a> {
 }
 
 
-fn load_fonts(options: &mut Opts,fontdb: resvg::usvg::fontdb::Database) {
+fn load_fonts(options: &mut Opts,fontdb: &mut resvg::usvg::fontdb::Database) {
 
     if let Some(font_files) = &options.font_files {
         for path in font_files {
-            let fontdb = fontdb.unwrap(); // Lock the mutex to access fontdb mutably
             if let Err(e) = fontdb.load_font_file(path) {
                 log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
             }
@@ -110,7 +107,6 @@ fn load_fonts(options: &mut Opts,fontdb: resvg::usvg::fontdb::Database) {
 
     if let Some(font_dirs) = &options.font_dirs {
         for path in font_dirs {
-            let fontdb = fontdb.lock().unwrap(); // Lock the mutex to access fontdb mutably
             fontdb.load_fonts_dir(path);
         }
     }
@@ -119,7 +115,6 @@ fn load_fonts(options: &mut Opts,fontdb: resvg::usvg::fontdb::Database) {
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
     // Use lock to modify the fontdb mutably
-    let mut fontdb = fontdb.lock().unwrap();
     fontdb.set_serif_family(take_or(options.serif_family.take(), "Times New Roman"));
     fontdb.set_sans_serif_family(take_or(options.sans_serif_family.take(), "Arial"));
     fontdb.set_cursive_family(take_or(options.cursive_family.take(), "Comic Sans MS"));
@@ -166,7 +161,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     }
 
     if has_text_nodes {
-        load_fonts(&mut options,fontdb);
+        load_fonts(&mut options,&mut fontdb);
     }
 
     let tree = {
