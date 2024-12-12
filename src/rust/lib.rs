@@ -5,7 +5,7 @@ Based on
 */
 
 use pyo3::prelude::*;
-use resvg::{self, usvg::FontResolver};
+use resvg::{self, usvg::{FontResolver}};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -141,7 +141,7 @@ fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_ski
     Ok(pixmap)
 }
 
-fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
+fn resvg_magic(mut options: Opts, svg_string: String,fontdb: &mut resvg::usvg::fontdb::Database ) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = resvg::usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -153,7 +153,6 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     let has_text_nodes = xml_tree
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
-    let mut fontdb = resvg::usvg::fontdb::Database::new();
 
 
     if !options.skip_system_fonts {
@@ -161,7 +160,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     }
 
     if has_text_nodes {
-        load_fonts(&mut options,&mut fontdb);
+        load_fonts(&mut options,fontdb);
     }
 
     let tree = {
@@ -322,6 +321,7 @@ fn svg_to_bytes(
         None => None,
     };
 
+    let mut fontdb = resvg::usvg::fontdb::Database::new();
 
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
@@ -334,7 +334,7 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
-        fontdb:resvg::usvg::fontdb::Database::new().into(),
+        fontdb:fontdb.clone().into(),
         font_resolver:FontResolver::default()
     };
 
@@ -353,7 +353,7 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned(),&mut fontdb).unwrap();
     Ok(pixmap)
 }
 
