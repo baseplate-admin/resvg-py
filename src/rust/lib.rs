@@ -5,7 +5,7 @@ Based on
 */
 
 use pyo3::prelude::*;
-use resvg;
+use resvg::{self, usvg::{FontResolver}};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -77,7 +77,7 @@ impl FitTo {
         )
     }
 }
-struct Opts {
+struct Opts<'a> {
     //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -89,12 +89,14 @@ struct Opts {
     font_dirs: Option<Vec<String>>,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: resvg::usvg::Options,
+    usvg_opt: resvg::usvg::Options<'a>,
     // Renderers
     skip_system_fonts: bool,
 }
 
-fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
+
+fn load_fonts(options: &mut Opts,fontdb: &mut resvg::usvg::fontdb::Database) {
+
     if let Some(font_files) = &options.font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
@@ -112,6 +114,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
+    // Use lock to modify the fontdb mutably
     fontdb.set_serif_family(take_or(options.serif_family.take(), "Times New Roman"));
     fontdb.set_sans_serif_family(take_or(options.sans_serif_family.take(), "Arial"));
     fontdb.set_cursive_family(take_or(options.cursive_family.take(), "Comic Sans MS"));
@@ -138,7 +141,7 @@ fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_ski
     Ok(pixmap)
 }
 
-fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
+fn resvg_magic(mut options: Opts, svg_string: String,fontdb: &mut resvg::usvg::fontdb::Database ) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = resvg::usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -151,17 +154,17 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    let mut fontdb = resvg::usvg::fontdb::Database::new();
+
     if !options.skip_system_fonts {
         fontdb.load_system_fonts();
     }
 
     if has_text_nodes {
-        load_fonts(&mut options, &mut fontdb);
+        load_fonts(&mut options,fontdb);
     }
 
     let tree = {
-        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
     Ok(render_svg(options, &tree)?.encode_png().unwrap())
@@ -227,6 +230,7 @@ fn svg_to_bytes(
     image_rendering: Option<String>,
 
 ) -> PyResult<Vec<u8>> {
+
     if log_information.unwrap_or(false) {
         if let Ok(()) = log::set_logger(&LOGGER) {
             log::set_max_level(log::LevelFilter::Warn);
@@ -234,7 +238,6 @@ fn svg_to_bytes(
     }
 
     let mut _svg_string = String::new();
-
     if let Some(svg_string) = svg_string {
         _svg_string = svg_string;
     }
@@ -318,6 +321,8 @@ fn svg_to_bytes(
         None => None,
     };
 
+    let mut fontdb = resvg::usvg::fontdb::Database::new();
+
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
@@ -329,6 +334,8 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
+        fontdb:fontdb.clone().into(),
+        font_resolver:FontResolver::default()
     };
 
 
@@ -346,7 +353,7 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned(),&mut fontdb).unwrap();
     Ok(pixmap)
 }
 
