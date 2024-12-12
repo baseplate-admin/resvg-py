@@ -5,7 +5,7 @@ Based on
 */
 
 use pyo3::prelude::*;
-use resvg;
+use resvg::{self, usvg::FontResolver};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -151,7 +151,6 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    let mut fontdb = resvg::usvg::fontdb::Database::new();
     if !options.skip_system_fonts {
         fontdb.load_system_fonts();
     }
@@ -161,7 +160,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     }
 
     let tree = {
-        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
     Ok(render_svg(options, &tree)?.encode_png().unwrap())
@@ -329,6 +328,8 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
+        fontdb: resvg::usvg::fontdb::Database::new(),
+        font_resolver:FontResolver::default()
     };
 
 
