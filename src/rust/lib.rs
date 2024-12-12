@@ -4,8 +4,10 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
+use std::sync::Arc;
+
 use pyo3::prelude::*;
-use resvg::{self, usvg::FontResolver};
+use resvg::{self, usvg::{fontdb, FontResolver}};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -94,9 +96,12 @@ struct Opts<'a> {
     skip_system_fonts: bool,
 }
 
-fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
+
+fn load_fonts(options: &mut Opts,fontdb: resvg::usvg::fontdb::Database) {
+
     if let Some(font_files) = &options.font_files {
         for path in font_files {
+            let fontdb = fontdb.unwrap(); // Lock the mutex to access fontdb mutably
             if let Err(e) = fontdb.load_font_file(path) {
                 log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
             }
@@ -105,6 +110,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
 
     if let Some(font_dirs) = &options.font_dirs {
         for path in font_dirs {
+            let fontdb = fontdb.lock().unwrap(); // Lock the mutex to access fontdb mutably
             fontdb.load_fonts_dir(path);
         }
     }
@@ -112,6 +118,8 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
+    // Use lock to modify the fontdb mutably
+    let mut fontdb = fontdb.lock().unwrap();
     fontdb.set_serif_family(take_or(options.serif_family.take(), "Times New Roman"));
     fontdb.set_sans_serif_family(take_or(options.sans_serif_family.take(), "Arial"));
     fontdb.set_cursive_family(take_or(options.cursive_family.take(), "Comic Sans MS"));
@@ -150,13 +158,15 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     let has_text_nodes = xml_tree
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
+    let mut fontdb = resvg::usvg::fontdb::Database::new();
+
 
     if !options.skip_system_fonts {
         fontdb.load_system_fonts();
     }
 
     if has_text_nodes {
-        load_fonts(&mut options, &mut fontdb);
+        load_fonts(&mut options,fontdb);
     }
 
     let tree = {
@@ -234,8 +244,6 @@ fn svg_to_bytes(
     }
 
     let mut _svg_string = String::new();
-let fontdb = resvg::usvg::fontdb::Database::new().into();
-
     if let Some(svg_string) = svg_string {
         _svg_string = svg_string;
     }
@@ -319,6 +327,7 @@ let fontdb = resvg::usvg::fontdb::Database::new().into();
         None => None,
     };
 
+
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
@@ -330,7 +339,7 @@ let fontdb = resvg::usvg::fontdb::Database::new().into();
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
-        fontdb:fontdb,
+        fontdb:resvg::usvg::fontdb::Database::new().into(),
         font_resolver:FontResolver::default()
     };
 
