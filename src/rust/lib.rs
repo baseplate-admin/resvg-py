@@ -4,7 +4,7 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use pyo3::prelude::*;
+use pyo3::{exceptions::PyValueError, prelude::*};
 use resvg;
 
 
@@ -126,8 +126,7 @@ fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_ski
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
-    )
-    .unwrap();
+    ).ok_or("Could not create pixmap".to_owned())?;
 
     if let Some(background) = options.background {
         pixmap.fill(svg_to_skia_color(background));
@@ -164,7 +163,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
             .map_err(|e| e.to_string())
     }?;
-    Ok(render_svg(options, &tree)?.encode_png().unwrap())
+    render_svg(options, &tree)?.encode_png().map_err(|_e| "Could not encode PNG".to_owned())
 }
 
 #[pyfunction]
@@ -244,66 +243,69 @@ fn svg_to_bytes(
         if let Some(svg_path) = svg_path {
             if std::path::Path::new(&svg_path).exists() {
                 let mut svg_data =
-                    std::fs::read(&svg_path).expect("failed to open the provided file");
+                    std::fs::read(&svg_path).map_err(|_e| PyErr::new::<PyValueError, _>("failed to open the provided file"))?;
                 if svg_data.starts_with(&[0x1f, 0x8b]) {
                     svg_data = resvg::usvg::decompress_svgz(&svg_data)
-                        .expect("can't decompress the svg file");
+                        .map_err(|_e| PyErr::new::<PyValueError, _>("can't decompress the svg file"))?;
                 };
                 _svg_string = std::str::from_utf8(&svg_data)
-                    .expect("can't convert bytes to utf-8")
+                    .map_err(|_e| PyErr::new::<PyValueError, _>("can't convert bytes to utf-8"))?
                     .to_owned();
             }
         }
     }
 
     if _svg_string.is_empty() {
-        panic!("`svg_string` is empty or `svg_path` contains empty invalid svg");
+        return Err(PyErr::new::<PyValueError, _>("`svg_string` is empty or `svg_path` contains empty invalid svg"));
     }
 
     let mut fit_to = FitTo::Original;
-    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
+    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG default size"))?;
 
     if let (Some(w), Some(h)) = (width, height) {
-        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width and height"))?;
         fit_to = FitTo::Size(w, h);
     } else if let Some(w) = width {
-        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width"))?;
         fit_to = FitTo::Width(w);
     } else if let Some(h) = height {
-        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with height"))?;
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
         fit_to = FitTo::Zoom(z as f32);
     }
 
-    let _shape_rendering = match shape_rendering
+    let _shape_rendering_opt = match shape_rendering
         .unwrap_or("geometric_precision".to_string())
         .as_ref()
     {
-        "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
-        "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
-        "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
-        _ => panic!("Unexpected invalid token for shape rendering"),
+        "optimize_speed" => Some(resvg::usvg::ShapeRendering::OptimizeSpeed),
+        "crisp_edges" => Some(resvg::usvg::ShapeRendering::CrispEdges),
+        "geometric_precision" => Some(resvg::usvg::ShapeRendering::GeometricPrecision),
+        _ => None,
     };
+    let _shape_rendering = _shape_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for shape rendering"))?;
 
-    let _text_rendering = match text_rendering
+    let _text_rendering_opt = match text_rendering
         .unwrap_or("optimize_legibility".to_string())
         .as_ref()
     {
-        "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
-        "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
-        "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
-        _ => panic!("Unexpected invalid token for text rendering"),
+        "optimize_speed" => Some(resvg::usvg::TextRendering::OptimizeSpeed),
+        "optimize_legibility" => Some(resvg::usvg::TextRendering::OptimizeLegibility),
+        "geometric_precision" => Some(resvg::usvg::TextRendering::GeometricPrecision),
+        _ => None,
     };
+    let _text_rendering = _text_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for text rendering"))?;
 
-    let _image_rendering = match image_rendering
+    let _image_rendering_opt = match image_rendering
         .unwrap_or("optimize_quality".to_string())
         .as_ref()
     {
-        "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
-        "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
-        _ => panic!("Unexpected invalid token for image rendering",),
+        "optimize_quality" => Some(resvg::usvg::ImageRendering::OptimizeQuality),
+        "optimize_speed" => Some(resvg::usvg::ImageRendering::OptimizeSpeed),
+        _ => None,
     };
+    let _image_rendering = _image_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for image rendering"))?;
 
     let _resources_dir = match resources_dir {
         Some(value) => Some(std::fs::canonicalize(value)?),
@@ -313,7 +315,7 @@ fn svg_to_bytes(
     let _background = match background {
         Some(color_str) => match color_str.parse::<svgtypes::Color>() {
             Ok(color) => Some(color),
-            Err(error) => panic!("Error background: {}", error),
+            Err(_error) => None,
         },
         None => None,
     };
@@ -331,8 +333,6 @@ fn svg_to_bytes(
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
     };
 
-
-
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
@@ -346,8 +346,8 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
-    Ok(pixmap)
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned());
+    pixmap.map_err(|e| PyErr::new::<PyValueError, _>(e))
 }
 
 fn get_version() -> &'static str {
