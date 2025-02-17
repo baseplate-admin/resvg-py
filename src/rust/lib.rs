@@ -4,7 +4,7 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use pyo3::prelude::*;
+use pyo3::{exceptions::PyValueError, prelude::*};
 use resvg;
 
 
@@ -126,8 +126,7 @@ fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_ski
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
-    )
-    .unwrap();
+    ).ok_or("Could not create pixmap".to_owned())?;
 
     if let Some(background) = options.background {
         pixmap.fill(svg_to_skia_color(background));
@@ -164,7 +163,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
             .map_err(|e| e.to_string())
     }?;
-    Ok(render_svg(options, &tree)?.encode_png().unwrap())
+    render_svg(options, &tree)?.encode_png().map_err(|_e| "Could not encode PNG".to_owned())
 }
 
 #[pyfunction]
@@ -261,16 +260,16 @@ fn svg_to_bytes(
     }
 
     let mut fit_to = FitTo::Original;
-    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
+    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG default size"))?;
 
     if let (Some(w), Some(h)) = (width, height) {
-        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width and height"))?;
         fit_to = FitTo::Size(w, h);
     } else if let Some(w) = width {
-        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).unwrap();
+        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width"))?;
         fit_to = FitTo::Width(w);
     } else if let Some(h) = height {
-        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
+        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with height"))?;
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
         fit_to = FitTo::Zoom(z as f32);
@@ -331,8 +330,6 @@ fn svg_to_bytes(
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
     };
 
-
-
     let options = Opts {
         usvg_opt: usvg_options,
         background: _background,
@@ -346,8 +343,8 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
-    Ok(pixmap)
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned());
+    pixmap.map_err(|e| PyErr::new::<PyValueError, _>(e))
 }
 
 fn get_version() -> &'static str {
