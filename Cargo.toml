@@ -10,7 +10,7 @@ path = "src/rust/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-log = "0.4.26"
+log = "0.4.27"
 pyo3 = "0.23.5"
 resvg = { version = "0.41.0", features = ["raster-images","text"] }
 svgtypes = "0.15.3"
