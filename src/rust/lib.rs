@@ -4,9 +4,9 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use pyo3::{exceptions::PyValueError, prelude::*};
-use resvg;
-
+use pyo3::prelude::*;
+use resvg::{self, usvg::{FontResolver}};
+use std::sync::Arc;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -77,7 +77,7 @@ impl FitTo {
         )
     }
 }
-struct Opts {
+struct Opts<'a> {
     //  font_size: u32,
     serif_family: Option<String>,
     sans_serif_family: Option<String>,
@@ -89,13 +89,22 @@ struct Opts {
     font_dirs: Option<Vec<String>>,
     // Abstract Classes
     fit_to: FitTo,
-    usvg_opt: resvg::usvg::Options,
+    usvg_opt: resvg::usvg::Options<'a>,
     // Renderers
     skip_system_fonts: bool,
 }
 
-fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
-    if let Some(font_files) = &options.font_files {
+fn load_fonts(
+    fontdb: &mut resvg::usvg::fontdb::Database,
+    font_files: &Option<Vec<String>>,
+    font_dirs: &Option<Vec<String>>,
+    serif_family: Option<String>,
+    sans_serif_family: Option<String>,
+    cursive_family: Option<String>,
+    fantasy_family: Option<String>,
+    monospace_family: Option<String>,
+) {
+    if let Some(font_files) = font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
                 log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
@@ -103,7 +112,7 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
         }
     }
 
-    if let Some(font_dirs) = &options.font_dirs {
+    if let Some(font_dirs) = font_dirs {
         for path in font_dirs {
             fontdb.load_fonts_dir(path);
         }
@@ -112,26 +121,28 @@ fn load_fonts(options: &mut Opts, fontdb: &mut resvg::usvg::fontdb::Database) {
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
-    fontdb.set_serif_family(take_or(options.serif_family.take(), "Times New Roman"));
-    fontdb.set_sans_serif_family(take_or(options.sans_serif_family.take(), "Arial"));
-    fontdb.set_cursive_family(take_or(options.cursive_family.take(), "Comic Sans MS"));
-    fontdb.set_fantasy_family(take_or(options.fantasy_family.take(), "Impact"));
-    fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
+    fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
+    fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
+    fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
+    fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
+    fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
 }
+
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
     resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
 
-fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
+fn render_svg(background: Option<svgtypes::Color>, fit_to: FitTo, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
-    ).ok_or("Could not create pixmap".to_owned())?;
+    )
+    .unwrap();
 
-    if let Some(background) = options.background {
+    if let Some(background) = background {
         pixmap.fill(svg_to_skia_color(background));
     }
-    let ts = options.fit_to.fit_to_transform(tree.size().to_int_size());
+    let ts = fit_to.fit_to_transform(tree.size().to_int_size());
     resvg::render(tree, ts, &mut pixmap.as_mut());
 
     Ok(pixmap)
@@ -150,20 +161,32 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    let mut fontdb = resvg::usvg::fontdb::Database::new();
-    if !options.skip_system_fonts {
-        fontdb.load_system_fonts();
-    }
+    // Create mutable reference to font database
+    if let Some(fontdb) = Arc::get_mut(&mut options.usvg_opt.fontdb) {
+        if !options.skip_system_fonts {
+            fontdb.load_system_fonts();
+        }
 
-    if has_text_nodes {
-        load_fonts(&mut options, &mut fontdb);
+        if has_text_nodes {
+            // Extract font options before passing to load_fonts
+            load_fonts(
+                fontdb,
+                &options.font_files,
+                &options.font_dirs,
+                options.serif_family.clone(),
+                options.sans_serif_family.clone(),
+                options.cursive_family.clone(),
+                options.fantasy_family.clone(),
+                options.monospace_family.clone(),
+            );
+        }
     }
 
     let tree = {
-        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt, &fontdb)
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
-    render_svg(options, &tree)?.encode_png().map_err(|_e| "Could not encode PNG".to_owned())
+    Ok(render_svg(options.background, options.fit_to, &tree)?.encode_png().unwrap())
 }
 
 #[pyfunction]
@@ -226,6 +249,7 @@ fn svg_to_bytes(
     image_rendering: Option<String>,
 
 ) -> PyResult<Vec<u8>> {
+
     if log_information.unwrap_or(false) {
         if let Ok(()) = log::set_logger(&LOGGER) {
             log::set_max_level(log::LevelFilter::Warn);
@@ -233,7 +257,6 @@ fn svg_to_bytes(
     }
 
     let mut _svg_string = String::new();
-
     if let Some(svg_string) = svg_string {
         _svg_string = svg_string;
     }
@@ -243,69 +266,66 @@ fn svg_to_bytes(
         if let Some(svg_path) = svg_path {
             if std::path::Path::new(&svg_path).exists() {
                 let mut svg_data =
-                    std::fs::read(&svg_path).map_err(|_e| PyErr::new::<PyValueError, _>("failed to open the provided file"))?;
+                    std::fs::read(&svg_path).expect("failed to open the provided file");
                 if svg_data.starts_with(&[0x1f, 0x8b]) {
                     svg_data = resvg::usvg::decompress_svgz(&svg_data)
-                        .map_err(|_e| PyErr::new::<PyValueError, _>("can't decompress the svg file"))?;
+                        .expect("can't decompress the svg file");
                 };
                 _svg_string = std::str::from_utf8(&svg_data)
-                    .map_err(|_e| PyErr::new::<PyValueError, _>("can't convert bytes to utf-8"))?
+                    .expect("can't convert bytes to utf-8")
                     .to_owned();
             }
         }
     }
 
     if _svg_string.is_empty() {
-        return Err(PyErr::new::<PyValueError, _>("`svg_string` is empty or `svg_path` contains empty invalid svg"));
+        panic!("`svg_string` is empty or `svg_path` contains empty invalid svg");
     }
 
     let mut fit_to = FitTo::Original;
-    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG default size"))?;
+    let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
 
     if let (Some(w), Some(h)) = (width, height) {
-        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width and height"))?;
+        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).unwrap();
         fit_to = FitTo::Size(w, h);
     } else if let Some(w) = width {
-        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with width"))?;
+        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).unwrap();
         fit_to = FitTo::Width(w);
     } else if let Some(h) = height {
-        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).ok_or(PyErr::new::<PyValueError, _>("Could not build SVG size with height"))?;
+        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
         fit_to = FitTo::Zoom(z as f32);
     }
 
-    let _shape_rendering_opt = match shape_rendering
+    let _shape_rendering = match shape_rendering
         .unwrap_or("geometric_precision".to_string())
         .as_ref()
     {
-        "optimize_speed" => Some(resvg::usvg::ShapeRendering::OptimizeSpeed),
-        "crisp_edges" => Some(resvg::usvg::ShapeRendering::CrispEdges),
-        "geometric_precision" => Some(resvg::usvg::ShapeRendering::GeometricPrecision),
-        _ => None,
+        "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
+        "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
+        "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
+        _ => panic!("Unexpected invalid token for shape rendering"),
     };
-    let _shape_rendering = _shape_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for shape rendering"))?;
 
-    let _text_rendering_opt = match text_rendering
+    let _text_rendering = match text_rendering
         .unwrap_or("optimize_legibility".to_string())
         .as_ref()
     {
-        "optimize_speed" => Some(resvg::usvg::TextRendering::OptimizeSpeed),
-        "optimize_legibility" => Some(resvg::usvg::TextRendering::OptimizeLegibility),
-        "geometric_precision" => Some(resvg::usvg::TextRendering::GeometricPrecision),
-        _ => None,
+        "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
+        "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
+        "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
+        _ => panic!("Unexpected invalid token for text rendering"),
     };
-    let _text_rendering = _text_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for text rendering"))?;
 
-    let _image_rendering_opt = match image_rendering
+    let _image_rendering = match image_rendering
         .unwrap_or("optimize_quality".to_string())
         .as_ref()
     {
-        "optimize_quality" => Some(resvg::usvg::ImageRendering::OptimizeQuality),
-        "optimize_speed" => Some(resvg::usvg::ImageRendering::OptimizeSpeed),
-        _ => None,
+        "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
+        "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
+        _ => panic!("Unexpected invalid token for image rendering",),
     };
-    let _image_rendering = _image_rendering_opt.ok_or(PyErr::new::<PyValueError, _>("Unexpected invalid token for image rendering"))?;
 
     let _resources_dir = match resources_dir {
         Some(value) => Some(std::fs::canonicalize(value)?),
@@ -315,10 +335,12 @@ fn svg_to_bytes(
     let _background = match background {
         Some(color_str) => match color_str.parse::<svgtypes::Color>() {
             Ok(color) => Some(color),
-            Err(_error) => None,
+            Err(error) => panic!("Error background: {}", error),
         },
         None => None,
     };
+
+    let fontdb = resvg::usvg::fontdb::Database::new();
 
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
@@ -331,6 +353,8 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
+        fontdb: Arc::new(fontdb),
+        font_resolver: FontResolver::default(),
     };
 
     let options = Opts {
@@ -346,8 +370,8 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned());
-    pixmap.map_err(|e| PyErr::new::<PyValueError, _>(e))
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
+    Ok(pixmap)
 }
 
 fn get_version() -> &'static str {
@@ -362,7 +386,6 @@ fn get_author() -> &'static str {
     static AUTHOR : std::sync::OnceLock<String>  = std::sync::OnceLock::new();
 
     AUTHOR.get_or_init(||{
-        
         env!("CARGO_PKG_AUTHORS").to_owned()
     })
 }
@@ -370,7 +393,7 @@ fn get_author() -> &'static str {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__",get_version())?;
+    m.add("__version__", get_version())?;
     m.add("__author__", get_author())?;
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     Ok(())

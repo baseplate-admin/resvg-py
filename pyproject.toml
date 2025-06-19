@@ -1,46 +1,35 @@
-[tool.poetry]
-name = "resvg-py"
-authors = ["baseplate-admin <61817579+baseplate-admin@users.noreply.github.com>"]
-readme = "README.md"
-package-mode = false
-
-[tool.poetry.dependencies]
-python = "^3.12"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.1.1"
-poethepoet = "^0.26.1"
-myst-parser = "^3.0.1"
-
-[tool.poetry.group.docs.dependencies]
-sphinx = "^7.2.6"
-furo = "^2024.1.29"
-sphinx-reload = "^0.2.0"
-
-[build-system]
-requires = ["maturin>=1.4,<2.0"]
-build-backend = "maturin"
-
 [project]
+requires-python = ">=3.9"
+readme = "README.md"
 name = "resvg_py"
-requires-python = ">=3.8"
+dynamic = ["version"]
+authors = [
+    { name = "baseplate-admin", email = "61817579+baseplate-admin@users.noreply.github.com" },
+]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dynamic = ["version"]
+
+
+[dependency-groups]
+dev = ["pytest>=8.1.1"]
+docs = [
+    "sphinx>=7.2.6",
+    "furo>=2024.1.29",
+    "sphinx-reload>=0.2.0",
+    "myst-parser>=3.0.1",
+]
 
 [project.urls]
 "Source Code" = "https://github.com/baseplate-admin/resvg-py"
 Issues = "https://github.com/baseplate-admin/resvg-py/issues"
 Documentation = "https://resvg-py.readthedocs.io/"
 
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
-
-[tool.poe.tasks]
-test = "pytest . -rP"
-"build:release" = "maturin build --release"
-"dev" = "maturin build"

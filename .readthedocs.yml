@@ -14,17 +14,14 @@ build:
         # You can also specify other tool versions:
     jobs:
         post_create_environment:
-            # Install poetry
-            # https://python-poetry.org/docs/#installing-manually
-            - pip install poetry
-            # Tell poetry to not use a virtual environment
-            - poetry config virtualenvs.create false
-            # Update poetry
-            - poetry lock
+            # Install uv (fast Python package manager)
+            - python -m pip install pipx
+            - pipx install uv
+
         post_install:
-            # Install dependencies with 'docs' dependency group
-            # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-            - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with docs
+            # Install with docs extras
+            - uv sync --group docs
+
 
 python:
     install:
