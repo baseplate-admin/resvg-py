@@ -6,7 +6,7 @@ Based on
 
 use pyo3::prelude::*;
 use resvg::{self, usvg::{FontResolver}};
-
+use std::sync::Arc;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -94,10 +94,17 @@ struct Opts<'a> {
     skip_system_fonts: bool,
 }
 
-
-fn load_fonts(options: &mut Opts,fontdb: &mut resvg::usvg::fontdb::Database) {
-
-    if let Some(font_files) = &options.font_files {
+fn load_fonts(
+    fontdb: &mut resvg::usvg::fontdb::Database,
+    font_files: &Option<Vec<String>>,
+    font_dirs: &Option<Vec<String>>,
+    serif_family: Option<String>,
+    sans_serif_family: Option<String>,
+    cursive_family: Option<String>,
+    fantasy_family: Option<String>,
+    monospace_family: Option<String>,
+) {
+    if let Some(font_files) = font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
                 log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
@@ -105,7 +112,7 @@ fn load_fonts(options: &mut Opts,fontdb: &mut resvg::usvg::fontdb::Database) {
         }
     }
 
-    if let Some(font_dirs) = &options.font_dirs {
+    if let Some(font_dirs) = font_dirs {
         for path in font_dirs {
             fontdb.load_fonts_dir(path);
         }
@@ -114,34 +121,34 @@ fn load_fonts(options: &mut Opts,fontdb: &mut resvg::usvg::fontdb::Database) {
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
-    // Use lock to modify the fontdb mutably
-    fontdb.set_serif_family(take_or(options.serif_family.take(), "Times New Roman"));
-    fontdb.set_sans_serif_family(take_or(options.sans_serif_family.take(), "Arial"));
-    fontdb.set_cursive_family(take_or(options.cursive_family.take(), "Comic Sans MS"));
-    fontdb.set_fantasy_family(take_or(options.fantasy_family.take(), "Impact"));
-    fontdb.set_monospace_family(take_or(options.monospace_family.take(), "Courier New"));
+    fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
+    fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
+    fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
+    fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
+    fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
 }
+
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
     resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
 
-fn render_svg(options: Opts, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
+fn render_svg(background: Option<svgtypes::Color>, fit_to: FitTo, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
         tree.size().to_int_size().width(),
         tree.size().to_int_size().height(),
     )
     .unwrap();
 
-    if let Some(background) = options.background {
+    if let Some(background) = background {
         pixmap.fill(svg_to_skia_color(background));
     }
-    let ts = options.fit_to.fit_to_transform(tree.size().to_int_size());
+    let ts = fit_to.fit_to_transform(tree.size().to_int_size());
     resvg::render(tree, ts, &mut pixmap.as_mut());
 
     Ok(pixmap)
 }
 
-fn resvg_magic(mut options: Opts, svg_string: String,fontdb: &mut resvg::usvg::fontdb::Database ) -> Result<Vec<u8>, String> {
+fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
         let xml_opt = resvg::usvg::roxmltree::ParsingOptions {
             allow_dtd: true,
@@ -154,20 +161,32 @@ fn resvg_magic(mut options: Opts, svg_string: String,fontdb: &mut resvg::usvg::f
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
+    // Create mutable reference to font database
+    if let Some(fontdb) = Arc::get_mut(&mut options.usvg_opt.fontdb) {
+        if !options.skip_system_fonts {
+            fontdb.load_system_fonts();
+        }
 
-    if !options.skip_system_fonts {
-        fontdb.load_system_fonts();
-    }
-
-    if has_text_nodes {
-        load_fonts(&mut options,fontdb);
+        if has_text_nodes {
+            // Extract font options before passing to load_fonts
+            load_fonts(
+                fontdb,
+                &options.font_files,
+                &options.font_dirs,
+                options.serif_family.clone(),
+                options.sans_serif_family.clone(),
+                options.cursive_family.clone(),
+                options.fantasy_family.clone(),
+                options.monospace_family.clone(),
+            );
+        }
     }
 
     let tree = {
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
-    Ok(render_svg(options, &tree)?.encode_png().unwrap())
+    Ok(render_svg(options.background, options.fit_to, &tree)?.encode_png().unwrap())
 }
 
 #[pyfunction]
@@ -321,7 +340,7 @@ fn svg_to_bytes(
         None => None,
     };
 
-    let mut fontdb = resvg::usvg::fontdb::Database::new();
+    let fontdb = resvg::usvg::fontdb::Database::new();
 
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
@@ -334,11 +353,9 @@ fn svg_to_bytes(
         image_rendering: _image_rendering,
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
-        fontdb:fontdb.clone().into(),
-        font_resolver:FontResolver::default()
+        fontdb: Arc::new(fontdb),
+        font_resolver: FontResolver::default(),
     };
-
-
 
     let options = Opts {
         usvg_opt: usvg_options,
@@ -353,7 +370,7 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned(),&mut fontdb).unwrap();
+    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
     Ok(pixmap)
 }
 
@@ -369,7 +386,6 @@ fn get_author() -> &'static str {
     static AUTHOR : std::sync::OnceLock<String>  = std::sync::OnceLock::new();
 
     AUTHOR.get_or_init(||{
-        
         env!("CARGO_PKG_AUTHORS").to_owned()
     })
 }
@@ -377,7 +393,7 @@ fn get_author() -> &'static str {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__",get_version())?;
+    m.add("__version__", get_version())?;
     m.add("__author__", get_author())?;
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
     Ok(())
