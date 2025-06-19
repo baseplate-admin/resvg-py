@@ -11,10 +11,10 @@ updates:
           interval: 'monthly'
           day: 'friday'
       open-pull-requests-limit: 100
-    - package-ecosystem: 'pip' # See documentation for possible values
+    - package-ecosystem: 'uv' # See documentation for possible values
       directory: '/' # Location of package manifests
       schedule:
-          interval: 'monthly'
+          interval: 'weekly'
           day: 'friday'
       open-pull-requests-limit: 100
 
