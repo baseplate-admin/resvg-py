@@ -258,49 +258,33 @@ fn svg_to_bytes(
             log::set_max_level(log::LevelFilter::Warn);
         }
     }
-    let os = std::env::consts::OS;
-    match os {
-        "windows" | "macos" => {
-            if font_family.is_none() {
-                font_family = Some("Times New Roman".to_owned());
-            }
-            if serif_family.is_none() {
-                serif_family = Some("Times New Roman".to_owned());
-            }
-            if sans_serif_family.is_none() {
-                sans_serif_family = Some("Arial".to_owned());
-            }
-            if cursive_family.is_none() {
-                cursive_family = Some("Comic Sans MS".to_owned());
-            }
-            if fantasy_family.is_none() {
-                fantasy_family = Some("Impact".to_owned());
-            }
-            if monospace_family.is_none() {
-                monospace_family = Some("Courier New".to_owned());
-            }
+    
+    let none_or_take = |item:Option<String>,otherwise:&str|{
+        if item.is_none(){
+            Some(otherwise.to_owned())
+        }else{
+            item
         }
-        "linux" => {
-            if font_family.is_none() {
-                font_family = Some("Liberation Serif".to_owned());
-            }
-            if serif_family.is_none() {
-                serif_family = Some("Liberation Serif".to_owned());
-            }
-            if sans_serif_family.is_none() {
-                sans_serif_family = Some("Liberation Sans".to_owned());
-            }
-            if cursive_family.is_none() {
-                cursive_family = Some("Comic Neue".to_owned());
-            }
-            if fantasy_family.is_none() {
-                fantasy_family = Some("Anton".to_owned());
-            }
-            if monospace_family.is_none() {
-                monospace_family = Some("Liberation Mono".to_owned());
-            }
-        }
-        _ => panic!("Unsupported operating system: {}", os),
+    };
+
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    {
+        font_family = none_or_take(font_family, "Times New Roman");
+        serif_family = none_or_take(serif_family, "Times New Roman");
+        sans_serif_family = none_or_take(sans_serif_family, "Arial");
+        cursive_family = none_or_take(cursive_family, "Comic Sans MS");
+        fantasy_family = none_or_take(fantasy_family, "Impact");
+        monospace_family = none_or_take(monospace_family, "Courier New");
+    }
+     
+    #[cfg(target_os="linux")] 
+    {
+        font_family = none_or_take(font_family, "Liberation Serif");
+        serif_family = none_or_take(serif_family, "Liberation Serif");
+        sans_serif_family = none_or_take(sans_serif_family, "Liberation Sans");
+        cursive_family = none_or_take(cursive_family, "Comic Neue");
+        fantasy_family = none_or_take(fantasy_family, "Anton");
+        monospace_family = none_or_take(monospace_family, "Liberation Mono");
     }
 
     let mut _svg_string = String::new();
