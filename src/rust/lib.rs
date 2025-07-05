@@ -99,11 +99,11 @@ fn load_fonts(
     fontdb: &mut resvg::usvg::fontdb::Database,
     font_files: &Option<Vec<String>>,
     font_dirs: &Option<Vec<String>>,
-    serif_family: Option<String>,
-    sans_serif_family: Option<String>,
-    cursive_family: Option<String>,
-    fantasy_family: Option<String>,
-    monospace_family: Option<String>,
+    serif_family: String,
+    sans_serif_family: String,
+    cursive_family: String,
+    fantasy_family: String,
+    monospace_family: String,
 ) {
     if let Some(font_files) = font_files {
         for path in font_files {
@@ -119,14 +119,12 @@ fn load_fonts(
         }
     }
 
-    let take_or =
-        |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
-    fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
-    fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
-    fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
-    fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
-    fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
+    fontdb.set_serif_family(serif_family);
+    fontdb.set_sans_serif_family(sans_serif_family);
+    fontdb.set_cursive_family(cursive_family);
+    fontdb.set_fantasy_family(fantasy_family);
+    fontdb.set_monospace_family(monospace_family);
 
 }
 
@@ -175,11 +173,11 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
                 fontdb,
                 &options.font_files,
                 &options.font_dirs,
-                options.serif_family.clone(),
-                options.sans_serif_family.clone(),
-                options.cursive_family.clone(),
-                options.fantasy_family.clone(),
-                options.monospace_family.clone(),
+                options.serif_family.unwrap(),
+                options.sans_serif_family.unwrap(),
+                options.cursive_family.unwrap(),
+                options.fantasy_family.unwrap(),
+                options.monospace_family.unwrap(),
             );
         }
     }
