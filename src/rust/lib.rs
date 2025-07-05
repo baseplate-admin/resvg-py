@@ -216,12 +216,12 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     resources_dir = None,
     languages = vec![],
     font_size = 16,
-    font_family = "Times New Roman".to_owned(),
-    serif_family = "Times New Roman".to_owned(),
-    sans_serif_family = "Arial".to_owned(),
-    cursive_family = "Comic Sans MS".to_owned(),
-    fantasy_family = "Impact".to_owned(),
-    monospace_family = "Courier New".to_owned(),
+    font_family = String::new(),
+    serif_family = String::new(),
+    sans_serif_family = String::new(),
+    cursive_family = String::new(),
+    fantasy_family = String::new(),
+    monospace_family = String::new(),
     font_files = None,
     font_dirs = None,
     shape_rendering = "geometric_precision".to_owned(),
@@ -249,12 +249,13 @@ fn svg_to_bytes(
     // Fonts
     languages: Option<Vec<String>>,
     font_size: Option<u32>,
-    font_family: Option<String>,
-    serif_family: Option<String>,
-    sans_serif_family:Option<String>,
-    cursive_family: Option<String>,
-    fantasy_family: Option<String>,
-    monospace_family:Option<String>,
+    mut font_family: Option<String>,
+    mut serif_family: Option<String>,
+    mut sans_serif_family:Option<String>,
+    mut cursive_family: Option<String>,
+    mut fantasy_family: Option<String>,
+    mut monospace_family:Option<String>,
+    // Font files and directories
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // Effects based
@@ -268,6 +269,24 @@ fn svg_to_bytes(
         if let Ok(()) = log::set_logger(&LOGGER) {
             log::set_max_level(log::LevelFilter::Warn);
         }
+    }
+    // Configure font for each os
+    if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
+        font_family= font_family.unwrap_or("Times New Roman".to_owned()).into();
+        serif_family  = serif_family.unwrap_or("Times New Roman".to_owned()).into();
+        sans_serif_family = sans_serif_family.unwrap_or("Arial".to_owned()).into();
+        cursive_family = cursive_family.unwrap_or("Comic Sans MS".to_owned()).into();
+        fantasy_family = fantasy_family.unwrap_or("Impact".to_owned()).into();
+        monospace_family = monospace_family.unwrap_or("Courier New".to_owned()).into();
+     } else if cfg!(target_os = "linux") {
+        font_family= font_family.unwrap_or("Liberation Serif".to_owned()).into();
+        serif_family  = serif_family.unwrap_or("Liberation Serif".to_owned()).into();
+        sans_serif_family = sans_serif_family.unwrap_or("Liberation Sans".to_owned()).into();
+        cursive_family = cursive_family.unwrap_or("Comic Neue".to_owned()).into();
+        fantasy_family = fantasy_family.unwrap_or("Anton".to_owned()).into();
+        monospace_family = monospace_family.unwrap_or("Liberation Mono".to_owned()).into();
+    } else {
+        panic!("Unsupported operating system for font loading");
     }
 
     let mut _svg_string = String::new();
@@ -355,11 +374,13 @@ fn svg_to_bytes(
     };
 
     let fontdb = resvg::usvg::fontdb::Database::new();
+    
+
 
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
-        font_family: font_family.unwrap_or("Times New Roman".to_string()),
+        font_family: font_family.unwrap(),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
@@ -371,6 +392,8 @@ fn svg_to_bytes(
         fontdb: Arc::new(fontdb),
         font_resolver: FontResolver::default(),
     };
+
+
 
     let options = Opts {
         usvg_opt: usvg_options,
