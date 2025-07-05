@@ -259,6 +259,7 @@ fn svg_to_bytes(
         }
     }
     let os = std::env::consts::OS;
+    
     let none_or_take = |item:Option<String>,otherwise:&str|{
         if item.is_none(){
             Some(otherwise.to_owned())
