@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 log = "0.4.21"
 pyo3 = "0.25.0"
-resvg = { version = "0.42.0", features = ["raster-images", "text"] }
+resvg = { version = "0.45.1", features = ["raster-images", "text"] }
 svgtypes = "0.15.1"
 
 
