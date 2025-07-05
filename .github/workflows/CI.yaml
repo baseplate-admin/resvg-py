@@ -182,11 +182,12 @@ jobs:
 
   test:
     name: Run Tests
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Set up Python (uv)
@@ -199,7 +200,7 @@ jobs:
       - name: Create virtual environment and install dependencies
         run: |
           uv sync --group dev
-
+      
       - name: Run backend tests
         run: |
           uv run pytest -v -x -rs
