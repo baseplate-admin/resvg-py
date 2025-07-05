@@ -2,6 +2,8 @@ import resvg_py
 from pathlib import Path
 import os
 import base64
+import pytest
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -15,6 +17,10 @@ output_dict = {
 }
 
 
+@pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="Runs only on Windows due to system font availability",
+)
 def test_with_system_font():
     path = os.path.join(BASE_DIR, "ink.svg")
     base = base64.b64encode(

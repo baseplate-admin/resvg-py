@@ -6,6 +6,7 @@ Based on
 
 use pyo3::prelude::*;
 use resvg::{self, usvg::{FontResolver}};
+use core::panic;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -121,11 +122,22 @@ fn load_fonts(
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
-    fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
-    fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
-    fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
-    fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
-    fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
+    if cfg!(target_os ="windows") || cfg!(target_os = "macos") {
+        fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
+        fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
+        fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
+        fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
+        fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
+    } else if cfg!(target_os = "linux") {
+        fontdb.set_serif_family(take_or(serif_family, "Liberation Serif"));
+        fontdb.set_sans_serif_family(take_or(sans_serif_family, "Liberation Sans"));
+        fontdb.set_cursive_family(take_or(cursive_family, "Comic Neue"));     // Or "Baloo"
+        fontdb.set_fantasy_family(take_or(fantasy_family, "Anton"));          // Or "Oswald"
+        fontdb.set_monospace_family(take_or(monospace_family, "Liberation Mono"));
+    } else {
+        panic!("Unsupported operating system for font loading");
+    }
+
 }
 
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
