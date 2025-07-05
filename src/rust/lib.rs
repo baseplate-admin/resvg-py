@@ -202,16 +202,16 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     height= None,
     zoom = None,
     dpi = 0,
-    style_sheet =String::new(),
+    style_sheet = None,
     resources_dir = None,
     languages = vec![],
     font_size = 16,
-    font_family = String::new(),
-    serif_family = String::new(),
-    sans_serif_family = String::new(),
-    cursive_family = String::new(),
-    fantasy_family = String::new(),
-    monospace_family = String::new(),
+    font_family = None,
+    serif_family = None,
+    sans_serif_family = None,
+    cursive_family = None,
+    fantasy_family = None,
+    monospace_family = None,
     font_files = None,
     font_dirs = None,
     shape_rendering = "geometric_precision".to_owned(),
@@ -391,12 +391,10 @@ fn svg_to_bytes(
 
     let fontdb = resvg::usvg::fontdb::Database::new();
     
-
-
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
-        font_family: font_family.unwrap_or("Times New Roman".to_string()),
+        font_family: font_family.unwrap(),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
