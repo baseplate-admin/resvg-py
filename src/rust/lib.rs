@@ -122,21 +122,11 @@ fn load_fonts(
     let take_or =
         |family: Option<String>, fallback: &str| family.unwrap_or_else(|| fallback.to_string());
 
-    if cfg!(target_os ="windows") || cfg!(target_os = "macos") {
-        fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
-        fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
-        fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
-        fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
-        fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
-    } else if cfg!(target_os = "linux") {
-        fontdb.set_serif_family(take_or(serif_family, "Liberation Serif"));
-        fontdb.set_sans_serif_family(take_or(sans_serif_family, "Liberation Sans"));
-        fontdb.set_cursive_family(take_or(cursive_family, "Comic Neue"));     // Or "Baloo"
-        fontdb.set_fantasy_family(take_or(fantasy_family, "Anton"));          // Or "Oswald"
-        fontdb.set_monospace_family(take_or(monospace_family, "Liberation Mono"));
-    } else {
-        panic!("Unsupported operating system for font loading");
-    }
+    fontdb.set_serif_family(take_or(serif_family, "Times New Roman"));
+    fontdb.set_sans_serif_family(take_or(sans_serif_family, "Arial"));
+    fontdb.set_cursive_family(take_or(cursive_family, "Comic Sans MS"));
+    fontdb.set_fantasy_family(take_or(fantasy_family, "Impact"));
+    fontdb.set_monospace_family(take_or(monospace_family, "Courier New"));
 
 }
 
@@ -270,23 +260,49 @@ fn svg_to_bytes(
             log::set_max_level(log::LevelFilter::Warn);
         }
     }
-    // Configure font for each os
-    if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
-        font_family= font_family.unwrap_or("Times New Roman".to_owned()).into();
-        serif_family  = serif_family.unwrap_or("Times New Roman".to_owned()).into();
-        sans_serif_family = sans_serif_family.unwrap_or("Arial".to_owned()).into();
-        cursive_family = cursive_family.unwrap_or("Comic Sans MS".to_owned()).into();
-        fantasy_family = fantasy_family.unwrap_or("Impact".to_owned()).into();
-        monospace_family = monospace_family.unwrap_or("Courier New".to_owned()).into();
-     } else if cfg!(target_os = "linux") {
-        font_family= font_family.unwrap_or("Liberation Serif".to_owned()).into();
-        serif_family  = serif_family.unwrap_or("Liberation Serif".to_owned()).into();
-        sans_serif_family = sans_serif_family.unwrap_or("Liberation Sans".to_owned()).into();
-        cursive_family = cursive_family.unwrap_or("Comic Neue".to_owned()).into();
-        fantasy_family = fantasy_family.unwrap_or("Anton".to_owned()).into();
-        monospace_family = monospace_family.unwrap_or("Liberation Mono".to_owned()).into();
-    } else {
-        panic!("Unsupported operating system for font loading");
+    let os = std::env::consts::OS;
+    match os {
+        "windows" | "macos" => {
+            if font_family.is_none() {
+                font_family = Some("Times New Roman".to_owned());
+            }
+            if serif_family.is_none() {
+                serif_family = Some("Times New Roman".to_owned());
+            }
+            if sans_serif_family.is_none() {
+                sans_serif_family = Some("Arial".to_owned());
+            }
+            if cursive_family.is_none() {
+                cursive_family = Some("Comic Sans MS".to_owned());
+            }
+            if fantasy_family.is_none() {
+                fantasy_family = Some("Impact".to_owned());
+            }
+            if monospace_family.is_none() {
+                monospace_family = Some("Courier New".to_owned());
+            }
+        }
+        "linux" => {
+            if font_family.is_none() {
+                font_family = Some("Liberation Serif".to_owned());
+            }
+            if serif_family.is_none() {
+                serif_family = Some("Liberation Serif".to_owned());
+            }
+            if sans_serif_family.is_none() {
+                sans_serif_family = Some("Liberation Sans".to_owned());
+            }
+            if cursive_family.is_none() {
+                cursive_family = Some("Comic Neue".to_owned());
+            }
+            if fantasy_family.is_none() {
+                fantasy_family = Some("Anton".to_owned());
+            }
+            if monospace_family.is_none() {
+                monospace_family = Some("Liberation Mono".to_owned());
+            }
+        }
+        _ => panic!("Unsupported operating system: {}", os),
     }
 
     let mut _svg_string = String::new();
@@ -380,7 +396,7 @@ fn svg_to_bytes(
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
-        font_family: font_family.unwrap(),
+        font_family: font_family.unwrap_or("Times New Roman".to_string()),
         font_size: font_size.unwrap_or(16) as f32,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
