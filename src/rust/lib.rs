@@ -212,6 +212,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     height= None,
     zoom = None,
     dpi = 0,
+    style_sheet =String::new(),
     resources_dir = None,
     languages = vec![],
     font_size = 16,
@@ -241,7 +242,8 @@ fn svg_to_bytes(
     height: Option<u32>,
     zoom: Option<u32>,
     dpi: Option<u32>,
-
+    // Style Sheet
+    style_sheet: Option<String>,
     // Resource Directory
     resources_dir: Option<String>,
     // Fonts
@@ -363,6 +365,7 @@ fn svg_to_bytes(
         shape_rendering: _shape_rendering,
         text_rendering: _text_rendering,
         image_rendering: _image_rendering,
+        style_sheet: Some(style_sheet.unwrap_or_default()),
         default_size,
         image_href_resolver: resvg::usvg::ImageHrefResolver::default(),
         fontdb: Arc::new(fontdb),
