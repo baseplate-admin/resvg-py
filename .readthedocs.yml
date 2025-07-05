@@ -1,6 +1,8 @@
 # .readthedocs.yaml
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# See https://github.com/astral-sh/uv/issues/10074
+
 
 # Required
 version: 2
@@ -13,20 +15,17 @@ build:
         rust: 'latest'
         # You can also specify other tool versions:
     jobs:
-        post_create_environment:
-            # Install uv (fast Python package manager)
-            - python -m pip install pipx
-            - pipx install uv
-
         post_install:
             # Install with docs extras
-            - uv sync --group docs
+            - python -m pip install uv
+            - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --group docs
 
 
 python:
     install:
         - method: pip
           path: .
+
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
     configuration: docs/conf.py
