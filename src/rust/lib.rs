@@ -259,8 +259,17 @@ fn svg_to_bytes(
         }
     }
     let os = std::env::consts::OS;
+    let none_or_take = |item:Option<String>,otherwise:String|{
+        if item.is_none(){
+            Some(otherwise);
+        }else{
+            item;
+        }
+    };
     match os {
+
         "windows" | "macos" => {
+            font_family = none_or_take(font_family, "Times New Roman".to_owned());
             if font_family.is_none() {
                 font_family = Some("Times New Roman".to_owned());
             }
