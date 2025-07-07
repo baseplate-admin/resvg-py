@@ -132,21 +132,31 @@ fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
     resvg::tiny_skia::Color::from_rgba8(color.red, color.green, color.blue, color.alpha)
 }
 
-fn render_svg(background: Option<svgtypes::Color>, fit_to: FitTo, tree: &resvg::usvg::Tree) -> Result<resvg::tiny_skia::Pixmap, String> {
+fn render_svg(
+    background: Option<svgtypes::Color>,
+    fit_to: FitTo,
+    tree: &resvg::usvg::Tree
+) -> Result<resvg::tiny_skia::Pixmap, String> {
+    let original_size = tree.size().to_int_size();
+
+    let final_size = fit_to.fit_to_size(original_size)
+        .ok_or("Failed to calculate scaled size")?;
+
     let mut pixmap = resvg::tiny_skia::Pixmap::new(
-        tree.size().to_int_size().width(),
-        tree.size().to_int_size().height(),
-    )
-    .unwrap();
+        final_size.width(),
+        final_size.height(),
+    ).ok_or("Failed to create pixmap")?;
 
     if let Some(background) = background {
         pixmap.fill(svg_to_skia_color(background));
     }
-    let ts = fit_to.fit_to_transform(tree.size().to_int_size());
+
+    let ts = fit_to.fit_to_transform(original_size);
     resvg::render(tree, ts, &mut pixmap.as_mut());
 
     Ok(pixmap)
 }
+
 
 fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
