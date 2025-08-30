@@ -8,7 +8,7 @@ def svg_to_bytes(
     svg_path: str | None = None,
     background: str | None = None,
     skip_system_fonts: bool | None = False,
-    log_information: bool = False,
+    log_information: bool | None = False,
     width: int | None = None,
     height: int | None = None,
     zoom: int | None = None,
@@ -16,24 +16,22 @@ def svg_to_bytes(
     resources_dir: str | None = None,
     languages: list[str] | None = [],
     font_size: int | None = 16,
-    font_family: str | None = Literal["Times New Roman"],
-    serif_family: str | None = Literal["Times New Roman"],
-    sans_serif_family: str | None = Literal["Arial"],
-    cursive_family: str | None = Literal["Comic Sans MS"],
-    fantasy_family: str | None = ["Impact"],
-    monospace_family: str | None = Literal["Courier New"],
+    font_family: str | None = "Times New Roman",
+    serif_family: str | None = "Times New Roman",
+    sans_serif_family: str | None = "Arial",
+    cursive_family: str | None = "Comic Sans MS",
+    fantasy_family: str | None = "Impact",
+    monospace_family: str | None = "Courier New",
     font_files: list[str] | None = None,
     font_dirs: list[str] | None = None,
     shape_rendering: Literal[
         "optimize_speed", "crisp_edges", "geometric_precision"
-    ] = Literal["geometric_precision"],
+    ] = "geometric_precision",
     text_rendering: Literal[
         "optimize_speed", "optimize_legibility", "optimize_legibility"
-    ] = Literal["optimize_legibility"],
-    image_rendering: Literal["optimize_quality", "optimize_speed"] = Literal[
-        "optimize_quality"
-    ],
-) -> list[bytes]:
+    ] = "optimize_legibility",
+    image_rendering: Literal["optimize_quality", "optimize_speed"] = "optimize_quality"
+) -> bytes:
     """
     :param svg_str: A string containing valid svg.
     :param svg_path: A path to a valid svg.
