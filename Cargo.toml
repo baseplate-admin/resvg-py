@@ -1,6 +1,6 @@
 [package]
 name = "resvg_py"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 authors = ['baseplate-admin']
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
