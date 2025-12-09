@@ -117,9 +117,9 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-15
             target: x86_64
-          - runner: macos-14
+          - runner: macos-15
             target: aarch64
     steps:
       - uses: actions/checkout@v4
@@ -204,5 +204,6 @@ jobs:
       - name: Run backend tests
         run: |
           uv run pytest -v -x -rs
+
 
 
