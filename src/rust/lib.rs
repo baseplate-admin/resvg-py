@@ -5,6 +5,7 @@ Based on
 */
 
 use pyo3::prelude::*;
+use pyo3::exceptions::PyValueError;
 use resvg::{self, usvg::{FontResolver}};
 use core::panic;
 use std::sync::Arc;
@@ -196,7 +197,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
             .map_err(|e| e.to_string())
     }?;
-    Ok(render_svg(options.background, options.fit_to, &tree)?.encode_png().unwrap())
+    let pixmap = render_svg(options.background, options.fit_to, &tree)?;
+    pixmap.encode_png().map_err(|e| e.to_string())
 }
 
 #[pyfunction]
@@ -320,7 +322,7 @@ fn svg_to_bytes(
     }
 
     if _svg_string.is_empty() {
-        panic!("`svg_string` is empty or `svg_path` contains empty invalid svg");
+        return Err(PyValueError::new_err("`svg_string` is empty or `svg_path` contains empty invalid svg"));
     }
 
     let mut fit_to = FitTo::Original;
@@ -414,8 +416,10 @@ fn svg_to_bytes(
         font_files,
         font_dirs,
     };
-    let pixmap = resvg_magic(options, _svg_string.trim().to_owned()).unwrap();
-    Ok(pixmap)
+    match resvg_magic(options, _svg_string.trim().to_owned()) {
+        Ok(pixmap) => Ok(pixmap),
+        Err(e) => Err(PyValueError::new_err(e)),
+    }
 }
 
 fn get_version() -> &'static str {
