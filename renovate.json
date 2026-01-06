@@ -1,14 +1,14 @@
 {
-  "extends": ["config:base"],
-  "prConcurrentLimit": 100,
-  "packageRules": [
-    {
-      "matchPackagePatterns": ["*"],
-      "matchManagers": ["cargo"],
-    },
-    {
-      "matchPackagePatterns": ["*"],
-      "matchManagers": ["uv"],
-    }
-  ]
+    "extends": ["config:base"],
+    "prConcurrentLimit": 100,
+    "packageRules": [
+        {
+            "matchPackagePatterns": [".*"],
+            "matchManagers": ["cargo"]
+        },
+        {
+            "matchPackagePatterns": [".*"],
+            "matchManagers": ["uv"]
+        }
+    ]
 }
