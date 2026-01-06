@@ -13,7 +13,7 @@ classifiers = [
 ]
 
 [tool.uv]
-default-groups = ['build', 'test', 'docs']
+default-groups = "all"
 
 [dependency-groups]
 build = ["maturin>=1.10.2"]
