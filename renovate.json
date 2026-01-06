@@ -5,12 +5,10 @@
     {
       "matchPackagePatterns": ["*"],
       "matchManagers": ["cargo"],
-      "schedule": ["every week on Friday"]
     },
     {
       "matchPackagePatterns": ["*"],
       "matchManagers": ["uv"],
-      "schedule": ["every week on Friday"]
     }
   ]
 }
