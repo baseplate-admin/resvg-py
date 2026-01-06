@@ -12,6 +12,8 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
+[tool.uv]
+default-groups = ['build', 'test', 'docs']
 
 [dependency-groups]
 build = ["maturin>=1.10.2"]
