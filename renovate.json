@@ -1,6 +1,7 @@
 {
     "extends": ["config:base"],
     "prConcurrentLimit": 100,
+    "schedule": ["every friday"],
     "packageRules": [
         {
             "matchPackagePatterns": [".*"],
