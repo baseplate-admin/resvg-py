@@ -14,32 +14,18 @@ My goal for this project is:
 
 Pre-requisite packages:
 
--   Install [poetry](https://python-poetry.org/)
--   Install [pipx](https://pipx.pypa.io/stable/installation/)
--   Install [maturin](https://www.maturin.rs/tutorial)
+-   Install [uv](https://astral.sh/uv)
 
 Then do the modifications to the [lib.rs]{.title-ref} file and add test
 in tests directory.
 
-1.  Install **poetry** dependencies:
+1.  Install **uv** dependencies:
 
     ```sh
-    poetry install
+    uv sync
     ```
 
-2.  Activate **poetry** shell:
-
-    ```sh
-    poetry shell
-    ```
-
-3.  Build with **maturin**:
-
-    ```sh
-    maturin develop
-    ```
-
-4.  Run tests:
+2.  Run tests:
 
     ```sh
     pytest .
