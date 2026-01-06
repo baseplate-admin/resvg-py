@@ -7,7 +7,6 @@ Based on
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use resvg::{self, usvg::{FontResolver}};
-use core::panic;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -379,7 +378,7 @@ fn svg_to_bytes(
     let _background = match background {
         Some(color_str) => match color_str.parse::<svgtypes::Color>() {
             Ok(color) => Some(color),
-            Err(error) => panic!("Error background: {}", error),
+            Err(error) => return Err(PyValueError::new_err(format!("Error background: {}", error))),
         },
         None => None,
     };
