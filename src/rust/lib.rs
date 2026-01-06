@@ -341,33 +341,34 @@ fn svg_to_bytes(
         fit_to = FitTo::Zoom(z as f32);
     }
 
-    let _shape_rendering = match shape_rendering
-        .unwrap_or("geometric_precision".to_string())
-        .as_ref()
-    {
+    let shape_rendering_val = shape_rendering.unwrap();
+    let _shape_rendering = match shape_rendering_val.as_ref() {
         "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
         "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
         "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
-        _ => panic!("Unexpected invalid token for shape rendering"),
+        _ => return Err(PyValueError::new_err(format!("The value of 'shape_rendering' must be one of 'optimize_speed','crisp_edges','geometric_precision'.It is currently '{}'", shape_rendering_val))),
     };
 
-    let _text_rendering = match text_rendering
-        .unwrap_or("optimize_legibility".to_string())
-        .as_ref()
-    {
+    
+    let text_rendering_val = text_rendering.unwrap();
+    let _text_rendering = match text_rendering_val.as_ref() {
         "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
         "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
         "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
-        _ => panic!("Unexpected invalid token for text rendering"),
+        _ => return Err(PyValueError::new_err(format!(
+            "The value of 'text_rendering' must be one of 'optimize_speed','optimize_legibility','geometric_precision'. It is currently '{}'",
+            text_rendering_val
+        ))),
     };
 
-    let _image_rendering = match image_rendering
-        .unwrap_or("optimize_quality".to_string())
-        .as_ref()
-    {
+    let image_rendering_val = image_rendering.unwrap();
+    let _image_rendering = match image_rendering_val.as_ref() {
         "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
         "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
-        _ => panic!("Unexpected invalid token for image rendering",),
+        _ => return Err(PyValueError::new_err(format!(
+            "The value of 'image_rendering' must be one of 'optimize_quality','optimize_speed'. It is currently '{}'",
+            image_rendering_val
+        ))),
     };
 
     let _resources_dir = match resources_dir {
