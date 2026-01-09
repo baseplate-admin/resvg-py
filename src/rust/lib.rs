@@ -178,6 +178,15 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         }
 
         if has_text_nodes {
+            if options.skip_system_fonts {
+                let no_font_files = options.font_files.as_ref().map_or(true, |v| v.is_empty());
+                let no_font_dirs = options.font_dirs.as_ref().map_or(true, |v| v.is_empty());
+
+                if no_font_files && no_font_dirs {
+                    log::warn!("No fonts provided and system fonts are skipped. Text might not be rendered.");
+                }
+            }
+
             // Extract font options before passing to load_fonts
             load_fonts(
                 fontdb,
