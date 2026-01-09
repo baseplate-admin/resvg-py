@@ -1,3 +1,5 @@
+# License
+
 Copyright (C) 2024-present, baseplate-admin
 
 Permission is hereby granted, free of charge, to any person obtaining a
