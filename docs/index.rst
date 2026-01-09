@@ -16,6 +16,7 @@ Safe bindings for `resvg`_
    usage
    font
    resvg
+   exception
    debugging
    contributing
    license
