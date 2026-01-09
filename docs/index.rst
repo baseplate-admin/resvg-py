@@ -17,7 +17,8 @@ Safe bindings for `resvg`_
    resvg
    debugging
    contributing
-
+   license
+   
 Indices and tables
 ==================
 
