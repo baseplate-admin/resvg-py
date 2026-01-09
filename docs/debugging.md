@@ -1,17 +1,12 @@
 # Debugging
 
-While [resvg-py](https://github.com/baseplate-admin/resvg-py) is a very
-thin wrapper around the [resvg](https://docs.rs/resvg/latest/resvg/)
-project there might be bugs in _resvg-py_ (or _resvg_).
+Normally `resvg-py` throws exception on any kind of malformed svgs. But there can be undefined behavior when using `resvg-py`.
 
-In order to debug the issue you have to enable logging in
-[resvg-py](https://github.com/baseplate-admin/resvg-py)
+In order to debug these kind of issues, you can enable logging in [resvg-py](https://github.com/baseplate-admin/resvg-py). Please check the [Logging](#logging) section for more details.
 
-How to log in [resvg-py](https://github.com/baseplate-admin/resvg-py)?
+# Logging
 
-When you call [resvg-py](https://github.com/baseplate-admin/resvg-py)\'s
-function in your code you can pass [log_information=True]{.title-ref} to
-print debug information to the stdout
+When you call [resvg-py](https://github.com/baseplate-admin/resvg-py)'s `svg_to_bytes` function in your code you can pass `log_information=True` to print debug information to the stdout.
 
 For example:
 
