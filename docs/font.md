@@ -8,25 +8,25 @@ Depending on your operating system, `resvg_py` uses different default fonts if n
 
 ### Windows / MacOS
 
-| Font Type      | Font Family     |
-| :------------- | :-------------- |
-| **Generic**    | Times New Roman |
-| **Serif**      | Times New Roman |
-| **Sans-serif** | Arial           |
-| **Cursive**    | Comic Sans MS   |
-| **Fantasy**    | Impact          |
-| **Monospace**  | Courier New     |
+| Font Type      | Font Family                                                       |
+| :------------- | :---------------------------------------------------------------- |
+| **Generic**    | [Times New Roman](https://en.wikipedia.org/wiki/Times_New_Roman)  |
+| **Serif**      | [Times New Roman](https://en.wikipedia.org/wiki/Times_New_Roman)  |
+| **Sans-serif** | [Arial](https://en.wikipedia.org/wiki/Arial)                      |
+| **Cursive**    | [Comic Sans MS](https://en.wikipedia.org/wiki/Comic_Sans)         |
+| **Fantasy**    | [Impact](<https://en.wikipedia.org/wiki/Impact_(typeface)>)       |
+| **Monospace**  | [Courier New](<https://en.wikipedia.org/wiki/Courier_(typeface)>) |
 
 ### Linux
 
-| Font Type      | Font Family      |
-| :------------- | :--------------- |
-| **Generic**    | Liberation Serif |
-| **Serif**      | Liberation Serif |
-| **Sans-serif** | Liberation Sans  |
-| **Cursive**    | Comic Neue       |
-| **Fantasy**    | Anton            |
-| **Monospace**  | Liberation Mono  |
+| Font Type      | Font Family                                                        |
+| :------------- | :----------------------------------------------------------------- |
+| **Generic**    | [Liberation Serif](https://en.wikipedia.org/wiki/Liberation_fonts) |
+| **Serif**      | [Liberation Serif](https://en.wikipedia.org/wiki/Liberation_fonts) |
+| **Sans-serif** | [Liberation Sans](https://en.wikipedia.org/wiki/Liberation_fonts)  |
+| **Cursive**    | [Comic Neue](https://en.wikipedia.org/wiki/Comic_Neue)             |
+| **Fantasy**    | Anton                                                              |
+| **Monospace**  | [Liberation Mono](https://en.wikipedia.org/wiki/Liberation_fonts)  |
 
 ## Custom Fonts
 
@@ -71,12 +71,12 @@ resvg_py.svg_to_bytes(
 
 You can specify which font family to use for different generic font families.
 
--   `font_family`: The default font family to use.
--   `serif_family`
--   `sans_serif_family`
--   `cursive_family`
--   `fantasy_family`
--   `monospace_family`
+-   `font_family`: The default font family to use when no font family is specified in the SVG or when the specified font family is not available.
+-   `serif_family`: The default serif font family (e.g., Times New Roman).
+-   `sans_serif_family`: The default sans-serif font family (e.g., Arial).
+-   `cursive_family`: The default cursive font family (e.g., Comic Sans MS).
+-   `fantasy_family`: The default fantasy font family (e.g., Impact).
+-   `monospace_family`: The default monospace font family (e.g., Courier New).
 
 ```python
 import resvg_py
