@@ -14,11 +14,12 @@ Safe bindings for `resvg`_
 
    installation
    usage
+   font
    resvg
    debugging
    contributing
    license
-   
+
 Indices and tables
 ==================
 
