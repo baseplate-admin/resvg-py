@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Python 3.8 to 3.12 supported.
+Python 3.8 to 3.14 supported.
 
 <sub>Currently it builds the non-EOL python versions with `maturin`\_ github-actions.</sub>
 
