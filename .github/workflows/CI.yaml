@@ -196,10 +196,6 @@ jobs:
 
             - name: Set up Python (uv)
               uses: astral-sh/setup-uv@v7
-              with:
-                  enable-cache: true
-                  python-version: ${{ matrix.python-version }}
-                  cache-dependency-glob: 'uv.lock'
 
             - name: Create virtual environment and install dependencies
               run: |
