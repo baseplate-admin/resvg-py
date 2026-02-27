@@ -20,9 +20,10 @@ build = ["maturin>=1.10.2"]
 
 docs = [
     "sphinx>=7.2.6",
-    "furo>=2024.1.29",
     "sphinx-reload>=0.2.0",
     "myst-parser>=3.0.1",
+    "shibuya>=2025.10.21",
+
 ]
 test = ["pytest>=8.1.1", "pyperclip>=1.11.0"]
 
