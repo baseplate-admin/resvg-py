@@ -4,7 +4,7 @@ Normally `resvg-py` throws exception on any kind of malformed svgs. But there ca
 
 In order to debug these kind of issues, you can enable logging in [resvg-py](https://github.com/baseplate-admin/resvg-py). Please check the [Logging](#logging) section for more details.
 
-# Logging
+## Logging
 
 When you call [resvg-py](https://github.com/baseplate-admin/resvg-py)'s `svg_to_bytes` function in your code you can pass `log_information=True` to print debug information to the stdout.
 
