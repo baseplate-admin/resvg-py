@@ -10,6 +10,6 @@
 
 .. autoclass:: __author__
 
-.. autoclass: __resvg_version__
+.. autoclass:: __resvg_version__
 
 ```
