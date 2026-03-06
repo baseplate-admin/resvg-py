@@ -3,6 +3,7 @@ name = "resvg_py"
 version = "0.2.6"
 edition = "2024"
 authors = ['baseplate-admin']
+build = 'build.rs'
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "resvg_py"
