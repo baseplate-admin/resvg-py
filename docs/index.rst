@@ -11,6 +11,7 @@ Safe bindings for `resvg`_
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
    installation
    usage
    font
