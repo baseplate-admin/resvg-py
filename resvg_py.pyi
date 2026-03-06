@@ -2,6 +2,7 @@ from typing import Literal
 
 __version__: str
 __author__: str
+__resvg_version__: str
 
 def svg_to_bytes(
     svg_string: str | None = None,
