@@ -7,7 +7,10 @@ Based on
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use resvg::{self, usvg::{FontResolver}};
-use std::sync::Arc;
+use std::sync::{Arc,Once};
+
+// Process level lock to allow multiple process to not call start many times
+static START: Once = Once::new();
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -274,9 +277,11 @@ fn svg_to_bytes(
 ) -> PyResult<Vec<u8>> {
 
     if log_information.unwrap_or(false) {
-        if let Ok(()) = log::set_logger(&LOGGER) {
-            log::set_max_level(log::LevelFilter::Warn);
-        }
+        START.call_once(||{
+            if let Ok(()) = log::set_logger(&LOGGER) {
+                log::set_max_level(log::LevelFilter::Warn);
+            }
+        })
     }
     
     let none_or_take = |item:Option<String>,otherwise:&str|{
@@ -455,11 +460,12 @@ fn get_resvg_version() -> &'static str{
 }
 
 /// A Python module implemented in Rust.
-#[pymodule]
+#[pymodule(gil_used = false)]
 fn resvg_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", get_version())?;
     m.add("__author__", get_author())?;
     m.add("__resvg_version__", get_resvg_version())?;
     m.add_function(wrap_pyfunction!(svg_to_bytes, m)?)?;
+
     Ok(())
 }
