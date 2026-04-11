@@ -376,7 +376,7 @@ dependencies = [
 
 [[package]]
 name = "resvg_py"
-version = "0.2.6"
+version = "0.3.0"
 dependencies = [
  "log",
  "pyo3",
