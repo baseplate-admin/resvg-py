@@ -143,42 +143,42 @@ jobs:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
 
-  emscripten:
-    runs-on: ${{ matrix.platform.runner }}
-    strategy:
-      matrix:
-        platform:
-          - runner: ubuntu-22.04
-            target: wasm32-unknown-emscripten
-    steps:
-      - uses: actions/checkout@v6
-      - run: pip install pyodide-build
-      - name: Get Emscripten and Python version info
-        shell: bash
-        run: |
-          echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
-          echo PYTHON_VERSION=$(pyodide config get python_version | cut -d '.' -f 1-2) >> $GITHUB_ENV
-          pip uninstall -y pyodide-build
-      - uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-          actions-cache-folder: emsdk-cache
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - run: pip install pyodide-build
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.platform.target }}
-          args: --release --out dist -i ${{ env.PYTHON_VERSION }}
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          rust-toolchain: nightly
-      - name: Upload wheels
-        uses: actions/upload-artifact@v6
-        with:
-          name: wasm-wheels
-          path: dist
+  # emscripten:
+  #   runs-on: ${{ matrix.platform.runner }}
+  #   strategy:
+  #     matrix:
+  #       platform:
+  #         - runner: ubuntu-22.04
+  #           target: wasm32-unknown-emscripten
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - run: pip install pyodide-build
+  #     - name: Get Emscripten and Python version info
+  #       shell: bash
+  #       run: |
+  #         echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
+  #         echo PYTHON_VERSION=$(pyodide config get python_version | cut -d '.' -f 1-2) >> $GITHUB_ENV
+  #         pip uninstall -y pyodide-build
+  #     - uses: mymindstorm/setup-emsdk@v14
+  #       with:
+  #         version: ${{ env.EMSCRIPTEN_VERSION }}
+  #         actions-cache-folder: emsdk-cache
+  #     - uses: actions/setup-python@v6
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+  #     - run: pip install pyodide-build
+  #     - name: Build wheels
+  #       uses: PyO3/maturin-action@v1
+  #       with:
+  #         target: ${{ matrix.platform.target }}
+  #         args: --release --out dist -i ${{ env.PYTHON_VERSION }}
+  #         sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  #         rust-toolchain: nightly
+  #     - name: Upload wheels
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: wasm-wheels
+  #         path: dist
 
   android:
     runs-on: ${{ matrix.platform.runner }}
@@ -218,7 +218,7 @@ jobs:
           name: wheels-sdist
           path: dist
   test:
-      needs: [linux, musllinux, windows, macos, emscripten, android, sdist]
+      needs: [linux, musllinux, windows, macos, android, sdist]
       name: Run Tests
       runs-on: windows-latest
       strategy:
