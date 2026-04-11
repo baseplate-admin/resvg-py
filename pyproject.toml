@@ -38,3 +38,6 @@ build-backend = "maturin"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[tool.maturin.generate-ci.github]
+platforms = ["manylinux", "musllinux", "windows", "macos", "android"]
