@@ -7,10 +7,22 @@ Based on
 use pyo3::prelude::*;
 use pyo3::exceptions::PyValueError;
 use resvg::{self, usvg::{FontResolver}};
-use std::sync::{Arc,Once};
+use std::sync::{Arc, Once, OnceLock};
+use resvg::usvg::fontdb;
 
 // Process level lock to allow multiple process to not call start many times
 static START: Once = Once::new();
+
+// fontdb::Database is Send + Sync (font data behind Arc, not Rc), required by OnceLock.
+static SYSTEM_FONTDB: OnceLock<fontdb::Database> = OnceLock::new();
+
+fn get_system_fontdb() -> &'static fontdb::Database {
+    SYSTEM_FONTDB.get_or_init(|| {
+        let mut db = fontdb::Database::new();
+        db.load_system_fonts();
+        db
+    })
+}
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum FitTo {
@@ -174,34 +186,31 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         .descendants()
         .any(|n| n.has_tag_name(("http://www.w3.org/2000/svg", "text")));
 
-    // Create mutable reference to font database
-    if let Some(fontdb) = Arc::get_mut(&mut options.usvg_opt.fontdb) {
+    if has_text_nodes {
+        let fontdb = Arc::get_mut(&mut options.usvg_opt.fontdb)
+            .expect("fontdb Arc should be uniquely owned");
         if !options.skip_system_fonts {
-            fontdb.load_system_fonts();
-        }
+            // Clone is O(N) in face-metadata strings but font binary data stays behind Arc.
+            *fontdb = get_system_fontdb().clone();
+        } else {
+            let no_font_files = options.font_files.as_ref().map_or(true, |v| v.is_empty());
+            let no_font_dirs = options.font_dirs.as_ref().map_or(true, |v| v.is_empty());
 
-        if has_text_nodes {
-            if options.skip_system_fonts {
-                let no_font_files = options.font_files.as_ref().map_or(true, |v| v.is_empty());
-                let no_font_dirs = options.font_dirs.as_ref().map_or(true, |v| v.is_empty());
-
-                if no_font_files && no_font_dirs {
-                    log::warn!("No fonts provided and system fonts are skipped. Text might not be rendered.");
-                }
+            if no_font_files && no_font_dirs {
+                log::warn!("No fonts provided and system fonts are skipped. Text might not be rendered.");
             }
-
-            // Extract font options before passing to load_fonts
-            load_fonts(
-                fontdb,
-                &options.font_files,
-                &options.font_dirs,
-                options.serif_family.unwrap(),
-                options.sans_serif_family.unwrap(),
-                options.cursive_family.unwrap(),
-                options.fantasy_family.unwrap(),
-                options.monospace_family.unwrap(),
-            );
         }
+
+        load_fonts(
+            fontdb,
+            &options.font_files,
+            &options.font_dirs,
+            options.serif_family.unwrap(),
+            options.sans_serif_family.unwrap(),
+            options.cursive_family.unwrap(),
+            options.fantasy_family.unwrap(),
+            options.monospace_family.unwrap(),
+        );
     }
 
     let tree = {
@@ -302,7 +311,7 @@ fn svg_to_bytes(
         monospace_family = none_or_take(monospace_family, "Courier New");
     }
      
-    #[cfg(target_os="linux")] 
+    #[cfg(target_os="linux")]
     {
         font_family = none_or_take(font_family, "Liberation Serif");
         serif_family = none_or_take(serif_family, "Liberation Serif");
@@ -310,6 +319,16 @@ fn svg_to_bytes(
         cursive_family = none_or_take(cursive_family, "Comic Neue");
         fantasy_family = none_or_take(fantasy_family, "Anton");
         monospace_family = none_or_take(monospace_family, "Liberation Mono");
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        font_family = none_or_take(font_family, "serif");
+        serif_family = none_or_take(serif_family, "serif");
+        sans_serif_family = none_or_take(sans_serif_family, "sans-serif");
+        cursive_family = none_or_take(cursive_family, "cursive");
+        fantasy_family = none_or_take(fantasy_family, "fantasy");
+        monospace_family = none_or_take(monospace_family, "monospace");
     }
 
     let mut _svg_string = String::new();
