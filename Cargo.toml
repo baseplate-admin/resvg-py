@@ -1,6 +1,6 @@
 [package]
 name = "resvg_py"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 authors = ['baseplate-admin']
 build = 'build.rs'
