@@ -62,3 +62,11 @@ def test_font_directory():
     ).decode("utf-8")
 
     assert base == output_dict["svg_with_kokoro_font_output"]
+
+
+def test_font_cache_consistency():
+    path = os.path.join(BASE_DIR, "ink.svg")
+    font = str(Path(BASE_DIR, "font_dir"))
+    first = resvg_py.svg_to_bytes(svg_path=path, skip_system_fonts=True, font_dirs=[font])
+    second = resvg_py.svg_to_bytes(svg_path=path, skip_system_fonts=True, font_dirs=[font])
+    assert first == second
