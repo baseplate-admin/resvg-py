@@ -4,11 +4,11 @@ Based on
 * https://github.com/mrdotb/resvg_nif/blob/master/native/resvg/src/lib.rs
 */
 
-use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use resvg::usvg::fontdb;
-use resvg::{self, usvg::FontResolver};
+use pyo3::exceptions::PyValueError;
+use resvg::{self, usvg::{FontResolver}};
 use std::sync::{Arc, Once, OnceLock};
+use resvg::usvg::fontdb;
 
 // Process level lock to allow multiple process to not call start many times
 static START: Once = Once::new();
@@ -85,7 +85,7 @@ impl FitTo {
         let size1 = size.to_size();
         let size2 = match self.fit_to_size(size) {
             Some(v) => v.to_size(),
-            None => return resvg::tiny_skia::Transform::default(),
+            none => return resvg::tiny_skia::Transform::default(),
         };
         resvg::tiny_skia::Transform::from_scale(
             size2.width() / size1.width(),
@@ -110,7 +110,6 @@ struct Opts<'a> {
     skip_system_fonts: bool,
 }
 
-#[allow(clippy::too_many_arguments)]
 fn load_fonts(
     fontdb: &mut resvg::usvg::fontdb::Database,
     font_files: &Option<Vec<String>>,
@@ -124,7 +123,7 @@ fn load_fonts(
     if let Some(font_files) = font_files {
         for path in font_files {
             if let Err(e) = fontdb.load_font_file(path) {
-                log::warn!("Failed to load '{}' cause {}.", path, e);
+                log::warn!("Failed to load '{}' cause {}.", path.to_string(), e);
             }
         }
     }
@@ -135,11 +134,13 @@ fn load_fonts(
         }
     }
 
+
     fontdb.set_serif_family(serif_family);
     fontdb.set_sans_serif_family(sans_serif_family);
     fontdb.set_cursive_family(cursive_family);
     fontdb.set_fantasy_family(fantasy_family);
     fontdb.set_monospace_family(monospace_family);
+
 }
 
 fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
@@ -149,16 +150,17 @@ fn svg_to_skia_color(color: svgtypes::Color) -> resvg::tiny_skia::Color {
 fn render_svg(
     background: Option<svgtypes::Color>,
     fit_to: FitTo,
-    tree: &resvg::usvg::Tree,
+    tree: &resvg::usvg::Tree
 ) -> Result<resvg::tiny_skia::Pixmap, String> {
     let original_size = tree.size().to_int_size();
 
-    let final_size = fit_to
-        .fit_to_size(original_size)
+    let final_size = fit_to.fit_to_size(original_size)
         .ok_or("Failed to calculate scaled size")?;
 
-    let mut pixmap = resvg::tiny_skia::Pixmap::new(final_size.width(), final_size.height())
-        .ok_or("Failed to create pixmap")?;
+    let mut pixmap = resvg::tiny_skia::Pixmap::new(
+        final_size.width(),
+        final_size.height(),
+    ).ok_or("Failed to create pixmap")?;
 
     if let Some(background) = background {
         pixmap.fill(svg_to_skia_color(background));
@@ -169,6 +171,7 @@ fn render_svg(
 
     Ok(pixmap)
 }
+
 
 fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String> {
     let xml_tree = {
@@ -190,13 +193,11 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
             // Clone is O(N) in face-metadata strings but font binary data stays behind Arc.
             *fontdb = get_system_fontdb().clone();
         } else {
-            let no_font_files = options.font_files.as_ref().is_none_or(|v| v.is_empty());
-            let no_font_dirs = options.font_dirs.as_ref().is_none_or(|v| v.is_empty());
+            let no_font_files = options.font_files.as_ref().map_or(true, |v| v.is_empty());
+            let no_font_dirs = options.font_dirs.as_ref().map_or(true, |v| v.is_empty());
 
             if no_font_files && no_font_dirs {
-                log::warn!(
-                    "No fonts provided and system fonts are skipped. Text might not be rendered."
-                );
+                log::warn!("No fonts provided and system fonts are skipped. Text might not be rendered.");
             }
         }
 
@@ -213,15 +214,15 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     }
 
     let tree = {
-        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt).map_err(|e| e.to_string())
+        resvg::usvg::Tree::from_xmltree(&xml_tree, &options.usvg_opt)
+            .map_err(|e| e.to_string())
     }?;
     let pixmap = render_svg(options.background, options.fit_to, &tree)?;
     pixmap.encode_png().map_err(|e| e.to_string())
 }
 
-#[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (
+#[pyo3(signature = ( 
     svg_string= None,
     svg_path = None,
     background = None,
@@ -270,30 +271,32 @@ fn svg_to_bytes(
     font_size: Option<u32>,
     mut font_family: Option<String>,
     mut serif_family: Option<String>,
-    mut sans_serif_family: Option<String>,
+    mut sans_serif_family:Option<String>,
     mut cursive_family: Option<String>,
     mut fantasy_family: Option<String>,
-    mut monospace_family: Option<String>,
+    mut monospace_family:Option<String>,
     // Font files and directories
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // Effects based
-    shape_rendering: Option<String>,
+    shape_rendering:Option<String>,
     text_rendering: Option<String>,
     image_rendering: Option<String>,
+
 ) -> PyResult<Vec<u8>> {
+
     if log_information.unwrap_or(false) {
-        START.call_once(|| {
+        START.call_once(||{
             if let Ok(()) = log::set_logger(&LOGGER) {
                 log::set_max_level(log::LevelFilter::Warn);
             }
         })
     }
-
-    let none_or_take = |item: Option<String>, otherwise: &str| {
-        if item.is_none() {
+    
+    let none_or_take = |item:Option<String>,otherwise:&str|{
+        if item.is_none(){
             Some(otherwise.to_owned())
-        } else {
+        }else{
             item
         }
     };
@@ -307,8 +310,8 @@ fn svg_to_bytes(
         fantasy_family = none_or_take(fantasy_family, "Impact");
         monospace_family = none_or_take(monospace_family, "Courier New");
     }
-
-    #[cfg(target_os = "linux")]
+     
+    #[cfg(target_os="linux")]
     {
         font_family = none_or_take(font_family, "Liberation Serif");
         serif_family = none_or_take(serif_family, "Liberation Serif");
@@ -334,24 +337,24 @@ fn svg_to_bytes(
     }
 
     // Only check for path if provided string is empty
-    if _svg_string.is_empty()
-        && let Some(svg_path) = svg_path
-        && std::path::Path::new(&svg_path).exists()
-    {
-        let mut svg_data = std::fs::read(&svg_path).expect("failed to open the provided file");
-        if svg_data.starts_with(&[0x1f, 0x8b]) {
-            svg_data =
-                resvg::usvg::decompress_svgz(&svg_data).expect("can't decompress the svg file");
-        };
-        _svg_string = std::str::from_utf8(&svg_data)
-            .expect("can't convert bytes to utf-8")
-            .to_owned();
+    if _svg_string.is_empty() {
+        if let Some(svg_path) = svg_path {
+            if std::path::Path::new(&svg_path).exists() {
+                let mut svg_data =
+                    std::fs::read(&svg_path).expect("failed to open the provided file");
+                if svg_data.starts_with(&[0x1f, 0x8b]) {
+                    svg_data = resvg::usvg::decompress_svgz(&svg_data)
+                        .expect("can't decompress the svg file");
+                };
+                _svg_string = std::str::from_utf8(&svg_data)
+                    .expect("can't convert bytes to utf-8")
+                    .to_owned();
+            }
+        }
     }
 
     if _svg_string.is_empty() {
-        return Err(PyValueError::new_err(
-            "`svg_string` is empty or `svg_path` contains empty invalid svg",
-        ));
+        return Err(PyValueError::new_err("`svg_string` is empty or `svg_path` contains empty invalid svg"));
     }
 
     let mut fit_to = FitTo::Original;
@@ -375,59 +378,46 @@ fn svg_to_bytes(
         "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
         "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
         "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
-        _ => {
-            return Err(PyValueError::new_err(format!(
-                "The value of 'shape_rendering' must be one of 'optimize_speed','crisp_edges','geometric_precision'.It is currently '{}'",
-                shape_rendering_val
-            )));
-        }
+        _ => return Err(PyValueError::new_err(format!("The value of 'shape_rendering' must be one of 'optimize_speed','crisp_edges','geometric_precision'.It is currently '{}'", shape_rendering_val))),
     };
 
+    
     let text_rendering_val = text_rendering.unwrap();
     let _text_rendering = match text_rendering_val.as_ref() {
         "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
         "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
         "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
-        _ => {
-            return Err(PyValueError::new_err(format!(
-                "The value of 'text_rendering' must be one of 'optimize_speed','optimize_legibility','geometric_precision'. It is currently '{}'",
-                text_rendering_val
-            )));
-        }
+        _ => return Err(PyValueError::new_err(format!(
+            "The value of 'text_rendering' must be one of 'optimize_speed','optimize_legibility','geometric_precision'. It is currently '{}'",
+            text_rendering_val
+        ))),
     };
 
     let image_rendering_val = image_rendering.unwrap();
     let _image_rendering = match image_rendering_val.as_ref() {
         "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
         "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
-        _ => {
-            return Err(PyValueError::new_err(format!(
-                "The value of 'image_rendering' must be one of 'optimize_quality','optimize_speed'. It is currently '{}'",
-                image_rendering_val
-            )));
-        }
+        _ => return Err(PyValueError::new_err(format!(
+            "The value of 'image_rendering' must be one of 'optimize_quality','optimize_speed'. It is currently '{}'",
+            image_rendering_val
+        ))),
     };
 
     let _resources_dir = match resources_dir {
         Some(value) => Some(std::fs::canonicalize(value)?),
-        None => None,
+        none => None,
     };
 
     let _background = match background {
         Some(color_str) => match color_str.parse::<svgtypes::Color>() {
             Ok(color) => Some(color),
-            Err(error) => {
-                return Err(PyValueError::new_err(format!(
-                    "Error background: {}",
-                    error
-                )));
-            }
+            Err(error) => return Err(PyValueError::new_err(format!("Error background: {}", error))),
         },
-        None => None,
+        none => None,
     };
 
     let fontdb = resvg::usvg::fontdb::Database::new();
-
+    
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
         dpi: dpi.unwrap_or(0) as f32,
@@ -443,6 +433,8 @@ fn svg_to_bytes(
         fontdb: Arc::new(fontdb),
         font_resolver: FontResolver::default(),
     };
+
+
 
     let options = Opts {
         usvg_opt: usvg_options,
@@ -464,20 +456,26 @@ fn svg_to_bytes(
 }
 
 fn get_version() -> &'static str {
-    static VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    static VERSION :  std::sync::OnceLock<String> =  std::sync::OnceLock::new();
 
-    VERSION.get_or_init(|| env!("CARGO_PKG_VERSION").to_owned())
+    VERSION.get_or_init(||{
+        env!("CARGO_PKG_VERSION").to_owned()
+    })
 }
 
 fn get_author() -> &'static str {
-    static AUTHOR: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    static AUTHOR : std::sync::OnceLock<String>  = std::sync::OnceLock::new();
 
-    AUTHOR.get_or_init(|| env!("CARGO_PKG_AUTHORS").to_owned())
+    AUTHOR.get_or_init(||{
+        env!("CARGO_PKG_AUTHORS").to_owned()
+    })
 }
-fn get_resvg_version() -> &'static str {
-    static RESVG_VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-
-    RESVG_VERSION.get_or_init(|| env!("DEP_RESVG_VERSION").to_owned())
+fn get_resvg_version() -> &'static str{
+    static RESVG_VERSION : std::sync::OnceLock<String> =std::sync::OnceLock::new();
+    
+    RESVG_VERSION.get_or_init(||{
+        env!("DEP_RESVG_VERSION").to_owned()
+    })
 }
 
 /// A Python module implemented in Rust.
