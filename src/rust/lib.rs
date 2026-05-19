@@ -85,7 +85,7 @@ impl FitTo {
         let size1 = size.to_size();
         let size2 = match self.fit_to_size(size) {
             Some(v) => v.to_size(),
-            None => return resvg::tiny_skia::Transform::default(),
+            none => return resvg::tiny_skia::Transform::default(),
         };
         resvg::tiny_skia::Transform::from_scale(
             size2.width() / size1.width(),
@@ -405,7 +405,7 @@ fn svg_to_bytes(
 
     let _resources_dir = match resources_dir {
         Some(value) => Some(std::fs::canonicalize(value)?),
-        None => None,
+        none => None,
     };
 
     let _background = match background {
@@ -413,7 +413,7 @@ fn svg_to_bytes(
             Ok(color) => Some(color),
             Err(error) => return Err(PyValueError::new_err(format!("Error background: {}", error))),
         },
-        None => None,
+        none => None,
     };
 
     let fontdb = resvg::usvg::fontdb::Database::new();
