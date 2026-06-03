@@ -17,23 +17,37 @@ release = resvg_py.__version__
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
+    "sphinx_tabs.tabs",
+    "sphinx_copybutton",
+    "sphinx_iconify",
+    "sphinx_contributors",
+    "sphinxcontrib.mermaid",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-
-
+# -- autodoc configuration ---------------------------------------------------
+autodoc_member_order = "groupwise"
 autodoc_typehints = "description"
+
+# -- copybutton configuration ------------------------------------------------
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_only_copy_prompt_lines = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "shibuya"
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "accent_color": "indigo",
+    "github_url": "https://github.com/baseplate-admin/resvg-py",
+}
+
+# -- contributors configuration ----------------------------------------------
+contributors_github_repo = "baseplate-admin/resvg-py"

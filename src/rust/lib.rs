@@ -219,6 +219,62 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     pixmap.encode_png().map_err(|e| e.to_string())
 }
 
+/// Render an SVG to PNG bytes.
+///
+/// Accepts either ``svg_string`` or ``svg_path`` (not both required).
+/// ``svg_path`` also supports ``.svgz`` (gzip-compressed) files.
+///
+/// :param svg_string: SVG markup as a UTF-8 string.
+/// :type svg_string: str | None
+/// :param svg_path: File path to an SVG (or ``.svgz``) file.
+/// :type svg_path: str | None
+/// :param background: CSS color for the canvas background, e.g. ``"#ffffff"``.
+/// :type background: str | None
+/// :param skip_system_fonts: Skip loading system fonts. Pass font files/dirs manually if enabled.
+/// :type skip_system_fonts: bool
+/// :param log_information: Print resvg debug logs to stdout.
+/// :type log_information: bool
+/// :param width: Target render width in pixels.
+/// :type width: int | None
+/// :param height: Target render height in pixels.
+/// :type height: int | None
+/// :param zoom: Integer zoom multiplier applied to the original size.
+/// :type zoom: int | None
+/// :param dpi: Dots-per-inch for the render (``0`` = SVG default).
+/// :type dpi: int
+/// :param style_sheet: CSS stylesheet string applied during parsing.
+/// :type style_sheet: str | None
+/// :param resources_dir: Directory resolved for ``xlink:href`` resource references.
+/// :type resources_dir: str | None
+/// :param languages: Preferred language list for ``<switch>`` elements.
+/// :type languages: list[str]
+/// :param font_size: Default font size in pixels.
+/// :type font_size: int
+/// :param font_family: Default (generic) font family.
+/// :type font_family: str | None
+/// :param serif_family: Serif generic font family override.
+/// :type serif_family: str | None
+/// :param sans_serif_family: Sans-serif generic font family override.
+/// :type sans_serif_family: str | None
+/// :param cursive_family: Cursive generic font family override.
+/// :type cursive_family: str | None
+/// :param fantasy_family: Fantasy generic font family override.
+/// :type fantasy_family: str | None
+/// :param monospace_family: Monospace generic font family override.
+/// :type monospace_family: str | None
+/// :param font_files: Explicit font file paths (``.ttf``, ``.otf``, etc.) to load.
+/// :type font_files: list[str] | None
+/// :param font_dirs: Directories recursively scanned for font files.
+/// :type font_dirs: list[str] | None
+/// :param shape_rendering: Shape rendering policy. One of ``"optimize_speed"``, ``"crisp_edges"``, ``"geometric_precision"``.
+/// :type shape_rendering: str
+/// :param text_rendering: Text rendering policy. One of ``"optimize_speed"``, ``"optimize_legibility"``, ``"geometric_precision"``.
+/// :type text_rendering: str
+/// :param image_rendering: Image rendering policy. One of ``"optimize_quality"``, ``"optimize_speed"``.
+/// :type image_rendering: str
+/// :returns: PNG-encoded image data.
+/// :rtype: bytes
+/// :raises ValueError: On empty/invalid SVG, bad option values, unparseable background color, or render failure.
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (
