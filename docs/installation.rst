@@ -155,9 +155,4 @@ If no wheel is available for your platform, build from source with
 
          uv pip install git+https://github.com/baseplate-admin/resvg-py.git
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Next steps
-   :hidden:
 
-   usage
