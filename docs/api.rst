@@ -69,12 +69,12 @@ Parameter reference
      - ``None``
      - Target pixel height.
    * - ``zoom``
-     - ``int | None``
+     - ``float | None``
      - ``None``
-     - Integer zoom multiplier.
+     - Zoom multiplier.
    * - ``dpi``
-     - ``int``
-     - ``0``
+     - ``float``
+     - ``0.0``
      - DPI override (``0`` = SVG default).
    * - ``style_sheet``
      - ``str | None``
@@ -89,8 +89,8 @@ Parameter reference
      - ``[]``
      - Preferred languages for ``<switch>`` elements.
    * - ``font_size``
-     - ``int``
-     - ``16``
+     - ``float``
+     - ``16.0``
      - Default font size in pixels.
    * - ``font_family``
      - ``str | None``

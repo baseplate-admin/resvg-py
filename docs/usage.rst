@@ -83,7 +83,7 @@ Resize at render time
    resvg_py.svg_to_bytes(svg_string=svg, height=1080)
 
    # zoom factor
-   resvg_py.svg_to_bytes(svg_string=svg, zoom=2)
+   resvg_py.svg_to_bytes(svg_string=svg, zoom=1.5)
 
 Base64 data URI
 ---------------

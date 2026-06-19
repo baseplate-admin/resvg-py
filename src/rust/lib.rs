@@ -238,10 +238,10 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 /// :type width: int | None
 /// :param height: Target render height in pixels.
 /// :type height: int | None
-/// :param zoom: Integer zoom multiplier applied to the original size.
-/// :type zoom: int | None
+/// :param zoom: Zoom multiplier applied to the original size.
+/// :type zoom: float | None
 /// :param dpi: Dots-per-inch for the render (``0`` = SVG default).
-/// :type dpi: int
+/// :type dpi: float
 /// :param style_sheet: CSS stylesheet string applied during parsing.
 /// :type style_sheet: str | None
 /// :param resources_dir: Directory resolved for ``xlink:href`` resource references.
@@ -249,7 +249,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 /// :param languages: Preferred language list for ``<switch>`` elements.
 /// :type languages: list[str]
 /// :param font_size: Default font size in pixels.
-/// :type font_size: int
+/// :type font_size: float
 /// :param font_family: Default (generic) font family.
 /// :type font_family: str | None
 /// :param serif_family: Serif generic font family override.
@@ -286,11 +286,11 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     width = None,
     height= None,
     zoom = None,
-    dpi = 0,
+    dpi = 0.0,
     style_sheet = None,
     resources_dir = None,
     languages = vec![],
-    font_size = 16,
+    font_size = 16.0,
     font_family = None,
     serif_family = None,
     sans_serif_family = None,
@@ -315,15 +315,15 @@ fn svg_to_bytes(
     // Control width, height, zoom, dpi
     width: Option<u32>,
     height: Option<u32>,
-    zoom: Option<u32>,
-    dpi: Option<u32>,
+    zoom: Option<f32>,
+    dpi: Option<f32>,
     // Style Sheet
     style_sheet: Option<String>,
     // Resource Directory
     resources_dir: Option<String>,
     // Fonts
     languages: Option<Vec<String>>,
-    font_size: Option<u32>,
+    font_size: Option<f32>,
     mut font_family: Option<String>,
     mut serif_family: Option<String>,
     mut sans_serif_family: Option<String>,
@@ -423,7 +423,26 @@ fn svg_to_bytes(
         default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
-        fit_to = FitTo::Zoom(z as f32);
+        if !z.is_finite() || z <= 0.0 {
+            return Err(PyValueError::new_err(
+                "The value of 'zoom' must be a positive finite number",
+            ));
+        }
+        fit_to = FitTo::Zoom(z);
+    }
+
+    let dpi_value = dpi.unwrap_or(0.0);
+    if !dpi_value.is_finite() || dpi_value < 0.0 {
+        return Err(PyValueError::new_err(
+            "The value of 'dpi' must be a non-negative finite number",
+        ));
+    }
+
+    let font_size_value = font_size.unwrap_or(16.0);
+    if !font_size_value.is_finite() || font_size_value <= 0.0 {
+        return Err(PyValueError::new_err(
+            "The value of 'font_size' must be a positive finite number",
+        ));
     }
 
     let shape_rendering_val = shape_rendering.unwrap();
@@ -486,9 +505,9 @@ fn svg_to_bytes(
 
     let usvg_options = resvg::usvg::Options {
         resources_dir: _resources_dir,
-        dpi: dpi.unwrap_or(0) as f32,
+        dpi: dpi_value,
         font_family: font_family.unwrap(),
-        font_size: font_size.unwrap_or(16) as f32,
+        font_size: font_size_value,
         languages: languages.unwrap_or(vec![]),
         shape_rendering: _shape_rendering,
         text_rendering: _text_rendering,
