@@ -37,7 +37,7 @@ jobs:
           - runner: ubuntu-22.04
             target: ppc64le
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: 3.14
@@ -68,7 +68,7 @@ jobs:
           - runner: ubuntu-22.04
             target: armv7
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: 3.14
@@ -100,7 +100,7 @@ jobs:
             target: aarch64
             python_arch: arm64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: 3.14
@@ -127,7 +127,7 @@ jobs:
           - runner: macos-latest
             target: aarch64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: 3.14
@@ -190,7 +190,7 @@ jobs:
           - runner: ubuntu-latest
             target: x86_64-linux-android
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -206,7 +206,7 @@ jobs:
   sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -230,7 +230,7 @@ jobs:
             - '3.13'
             - '3.14'
       steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
         - name: Set up Python (uv)
           uses: astral-sh/setup-uv@v8.2.0
         - name: Create virtual environment and install dependencies
