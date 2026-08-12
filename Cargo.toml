@@ -23,7 +23,7 @@ opt-level = 'z'
 strip = true
 
 [profile.release]
-panic = "abort"
+# PyO3 can only translate Rust panics into Python exceptions when they unwind.
 codegen-units = 1
 lto = "fat"
 opt-level = 'z'

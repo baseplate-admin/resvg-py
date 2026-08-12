@@ -1,6 +1,10 @@
 import pytest
 import resvg_py
 
+
+SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>'
+
+
 def test_broken_svg_raises_exception():
     broken_svg = """<svg xmlns="http://www.w3.org/2000/svg" width=1194" height="240" viewBox="0 0 1194">
     <g>
@@ -10,3 +14,9 @@ def test_broken_svg_raises_exception():
     
     with pytest.raises(ValueError):
         resvg_py.svg_to_bytes(svg_string=broken_svg)
+
+
+@pytest.mark.parametrize("argument", ["shape_rendering", "text_rendering", "image_rendering"])
+def test_rendering_policy_none_raises_type_error(argument):
+    with pytest.raises(TypeError):
+        resvg_py.svg_to_bytes(svg_string=SVG, **{argument: None})

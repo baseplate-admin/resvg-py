@@ -36,6 +36,44 @@ def test_float_dpi_and_font_size_are_accepted():
         ("font_size", math.inf),
     ],
 )
-def test_invalid_float_options_raise_value_error(argument, value):
+def test_invalid_numeric_options_raise_value_error(argument, value):
     with pytest.raises(ValueError):
         resvg_py.svg_to_bytes(svg_string=SVG, **{argument: value})
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"width": 0},
+        {"height": 0},
+        {"width": 0, "height": 1},
+        {"width": 1, "height": 0},
+    ],
+)
+def test_zero_dimension_raises_value_error(kwargs):
+    with pytest.raises(ValueError):
+        resvg_py.svg_to_bytes(svg_string=SVG, **kwargs)
+
+
+@pytest.mark.parametrize("argument", ["width", "height"])
+@pytest.mark.parametrize("value", [-1, 2**32])
+def test_dimension_outside_u32_raises_overflow_error(argument, value):
+    with pytest.raises(OverflowError):
+        resvg_py.svg_to_bytes(svg_string=SVG, **{argument: value})
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected_size"),
+    [
+        ({"width": 50, "zoom": math.nan}, (50, 40)),
+        ({"height": 40, "zoom": math.nan}, (50, 40)),
+        ({"width": 30, "height": 20, "zoom": math.nan}, (25, 20)),
+    ],
+)
+def test_dimension_takes_precedence_over_zoom(kwargs, expected_size):
+    assert png_size(bytes(resvg_py.svg_to_bytes(svg_string=SVG, **kwargs))) == expected_size
+
+
+def test_arguments_are_converted_before_dimension_precedence():
+    with pytest.raises(TypeError):
+        resvg_py.svg_to_bytes(svg_string=SVG, width=50, zoom="invalid")
