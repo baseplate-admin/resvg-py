@@ -2,9 +2,15 @@
 #
 # Three forward-compatible ABI families per platform instead of one wheel per CPython version:
 #
-#   -i python3.10   -> cp310-abi3        every GIL CPython 3.10+
+#   -i python3.14   -> cp310-abi3        every GIL CPython 3.10+
 #   -i python3.14t  -> cp314-cp314t      free-threaded 3.14 (predates abi3t, PEP 803)
 #   -i python3.15t  -> cp315-abi3.abi3t  free-threaded AND GIL 3.15+, and every release after
+#
+# The abi3 floor is the `abi3-py310` Cargo feature, NOT the build interpreter: 3.14 emits a
+# `cp310-abi3` wheel that runs on 3.10 (the abi-coverage job proves it). Building with 3.14 rather
+# than 3.10 is deliberate — Windows on ARM has no CPython before 3.11, which is why the old
+# per-version matrix silently started at 3.12 there. Pinning the build to the oldest supported
+# version reintroduces that per-runner availability problem for no benefit.
 #
 # PyPy ignores abi3 (pyo3 falls back to version-specific), so it keeps its own leg.
 #
@@ -49,7 +55,7 @@ jobs:
             target: s390x
           - runner: ubuntu-22.04
             target: ppc64le
-        interpreter: [python3.10, python3.14t, python3.15t, pypy3.11]
+        interpreter: [python3.14, python3.14t, python3.15t, pypy3.11]
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
@@ -81,7 +87,7 @@ jobs:
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
-        interpreter: [python3.10, python3.14t, python3.15t, pypy3.11]
+        interpreter: [python3.14, python3.14t, python3.15t, pypy3.11]
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
@@ -114,7 +120,7 @@ jobs:
           - runner: windows-11-arm
             target: aarch64
             python_arch: arm64
-        python: ["3.10", "3.14t", "3.15t"]
+        python: ["3.14", "3.14t", "3.15t"]
     steps:
       - uses: actions/checkout@v7
       # setup-python installs the requested build as the only `python` on PATH, so `-i python` selects
@@ -148,7 +154,7 @@ jobs:
             target: x86_64
           - runner: macos-latest
             target: aarch64
-        python: ["3.10", "3.14t", "3.15t"]
+        python: ["3.14", "3.14t", "3.15t"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
