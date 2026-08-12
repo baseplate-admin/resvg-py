@@ -1,16 +1,19 @@
 # Hand-maintained (was `maturin generate-ci github --platform all`; regenerating drops the ABI matrix).
 #
-# Three forward-compatible ABI families per platform instead of one wheel per CPython version:
+# Three forward-compatible ABI families per platform instead of one wheel per CPython version.
+# Support still starts at 3.10 — the jobs are named for the family they emit, not for the version
+# they happen to build with:
 #
-#   -i python3.14   -> cp310-abi3        every GIL CPython 3.10+
-#   -i python3.14t  -> cp314-cp314t      free-threaded 3.14 (predates abi3t, PEP 803)
-#   -i python3.15t  -> cp315-abi3.abi3t  free-threaded AND GIL 3.15+, and every release after
+#   family   wheel tag          supports                                    built by
+#   abi3     cp310-abi3         every GIL CPython 3.10+                     3.14
+#   cp314t   cp314-cp314t       free-threaded 3.14 (predates abi3t)         3.14t
+#   abi3t    cp315-abi3.abi3t   GIL AND free-threaded 3.15+, and later      3.15t
 #
 # The abi3 floor is the `abi3-py310` Cargo feature, NOT the build interpreter: 3.14 emits a
-# `cp310-abi3` wheel that runs on 3.10 (the abi-coverage job proves it). Building with 3.14 rather
-# than 3.10 is deliberate — Windows on ARM has no CPython before 3.11, which is why the old
-# per-version matrix silently started at 3.12 there. Pinning the build to the oldest supported
-# version reintroduces that per-runner availability problem for no benefit.
+# `cp310-abi3` wheel that runs on 3.10, which the abi-coverage job checks on a real 3.10. Building
+# with 3.14 rather than 3.10 is deliberate — Windows on ARM has no CPython before 3.11, which is why
+# the old per-version matrix silently started at 3.12 there, and building with the oldest supported
+# version would reintroduce that per-runner availability problem for no benefit.
 #
 # PyPy ignores abi3 (pyo3 falls back to version-specific), so it keeps its own leg.
 #
@@ -34,11 +37,11 @@ permissions:
 
 jobs:
   linux:
-    name: linux ${{ matrix.platform.target }} ${{ matrix.interpreter }}
+    name: linux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
     # 3.15 is still prerelease: only the x86_64/i686 manylinux images ship it, so the abi3t leg is
     # advisory until the rest catch up. Drop this once every image has python3.15t.
-    continue-on-error: ${{ matrix.interpreter == 'python3.15t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -55,26 +58,32 @@ jobs:
             target: s390x
           - runner: ubuntu-22.04
             target: ppc64le
-        interpreter: [python3.14, python3.14t, python3.15t, pypy3.11]
+        # Named for the ABI family produced, not the interpreter that builds it — `abi3` is built by
+        # 3.14 but the wheel supports 3.10+.
+        abi:
+          - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
+          - { tag: cp314t, name: "cp314t (free-threaded 3.14)", interpreter: python3.14t }
+          - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", interpreter: python3.15t }
+          - { tag: pypy311, name: "pypy3.11", interpreter: pypy3.11 }
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i ${{ matrix.interpreter }}
+          args: --release --out dist -i ${{ matrix.abi.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: wheels-linux-${{ matrix.platform.target }}-${{ matrix.interpreter }}
+          name: wheels-linux-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
           path: dist
 
   musllinux:
-    name: musllinux ${{ matrix.platform.target }} ${{ matrix.interpreter }}
+    name: musllinux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.interpreter == 'python3.15t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,26 +96,32 @@ jobs:
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
-        interpreter: [python3.14, python3.14t, python3.15t, pypy3.11]
+        # Named for the ABI family produced, not the interpreter that builds it — `abi3` is built by
+        # 3.14 but the wheel supports 3.10+.
+        abi:
+          - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
+          - { tag: cp314t, name: "cp314t (free-threaded 3.14)", interpreter: python3.14t }
+          - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", interpreter: python3.15t }
+          - { tag: pypy311, name: "pypy3.11", interpreter: pypy3.11 }
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist -i ${{ matrix.interpreter }}
+          args: --release --out dist -i ${{ matrix.abi.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: wheels-musllinux-${{ matrix.platform.target }}-${{ matrix.interpreter }}
+          name: wheels-musllinux-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
           path: dist
 
   windows:
-    name: windows ${{ matrix.platform.target }} ${{ matrix.python }}
+    name: windows ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.python == '3.15t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -120,14 +135,17 @@ jobs:
           - runner: windows-11-arm
             target: aarch64
             python_arch: arm64
-        python: ["3.14", "3.14t", "3.15t"]
+        abi:
+          - { tag: abi3, name: "abi3 (GIL 3.10+)", python: "3.14" }
+          - { tag: cp314t, name: "cp314t (free-threaded 3.14)", python: "3.14t" }
+          - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", python: "3.15t" }
     steps:
       - uses: actions/checkout@v7
       # setup-python installs the requested build as the only `python` on PATH, so `-i python` selects
       # it — including the free-threaded ones, where a `python3.14t.exe` name does not exist on Windows.
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.abi.python }}
           architecture: ${{ matrix.platform.python_arch }}
           allow-prereleases: true
       - name: Build wheels
@@ -139,13 +157,13 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: wheels-windows-${{ matrix.platform.target }}-${{ matrix.python }}
+          name: wheels-windows-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
           path: dist
 
   macos:
-    name: macos ${{ matrix.platform.target }} ${{ matrix.python }}
+    name: macos ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.python == '3.15t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -154,12 +172,15 @@ jobs:
             target: x86_64
           - runner: macos-latest
             target: aarch64
-        python: ["3.14", "3.14t", "3.15t"]
+        abi:
+          - { tag: abi3, name: "abi3 (GIL 3.10+)", python: "3.14" }
+          - { tag: cp314t, name: "cp314t (free-threaded 3.14)", python: "3.14t" }
+          - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", python: "3.15t" }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.abi.python }}
           allow-prereleases: true
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -170,7 +191,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: wheels-macos-${{ matrix.platform.target }}-${{ matrix.python }}
+          name: wheels-macos-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
           path: dist
 
   # emscripten:
