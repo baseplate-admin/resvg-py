@@ -1,25 +1,17 @@
-# Hand-maintained (was `maturin generate-ci github --platform all`; regenerating drops the ABI matrix).
+# Hand-maintained; `maturin generate-ci` would drop the ABI matrix below.
 #
-# Three forward-compatible ABI families per platform instead of one wheel per CPython version.
-# Support still starts at 3.10 — the jobs are named for the family they emit, not for the version
-# they happen to build with:
+#   family   wheel tag          supports                                 built by
+#   abi3     cp310-abi3         GIL CPython 3.10+                        3.14
+#   cp314t   cp314-cp314t       free-threaded 3.14 (predates abi3t)      3.14t
+#   abi3t    cp315-abi3.abi3t   GIL and free-threaded 3.15+, and later   3.15t
 #
-#   family   wheel tag          supports                                    built by
-#   abi3     cp310-abi3         every GIL CPython 3.10+                     3.14
-#   cp314t   cp314-cp314t       free-threaded 3.14 (predates abi3t)         3.14t
-#   abi3t    cp315-abi3.abi3t   GIL AND free-threaded 3.15+, and later      3.15t
+# The abi3 floor is the `abi3-py310` Cargo feature, not the build interpreter, which is why the abi3
+# leg builds with 3.14: Windows on ARM has no CPython before 3.11. PyPy has no stable ABI (cpyext
+# emulates the full C API, not the limited one), so it keeps a version-specific leg.
 #
-# The abi3 floor is the `abi3-py310` Cargo feature, NOT the build interpreter: 3.14 emits a
-# `cp310-abi3` wheel that runs on 3.10, which the abi-coverage job checks on a real 3.10. Building
-# with 3.14 rather than 3.10 is deliberate — Windows on ARM has no CPython before 3.11, which is why
-# the old per-version matrix silently started at 3.12 there, and building with the oldest supported
-# version would reintroduce that per-runner availability problem for no benefit.
-#
-# PyPy ignores abi3 (pyo3 falls back to version-specific), so it keeps its own leg.
-#
-# One interpreter per job, never `--find-interpreter`: under abi3 every interpreter in a job emits the
-# SAME wheel filename, so the job would rebuild one file N times and same-named wheels from different
-# jobs can be concatenated by artifact merging into a ZIP PyPI rejects (CVE-2025-54368 strict parsing).
+# One interpreter per job, never `--find-interpreter`: under abi3 every interpreter emits the same
+# wheel filename, and same-named wheels merged across artifacts can concatenate into a ZIP PyPI
+# rejects (CVE-2025-54368).
 name: CI
 
 on:
@@ -39,8 +31,7 @@ jobs:
   linux:
     name: linux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    # 3.15 is still prerelease: only the x86_64/i686 manylinux images ship it, so the abi3t leg is
-    # advisory until the rest catch up. Drop this once every image has python3.15t.
+    # Advisory until every manylinux image ships python3.15t; only x86_64/i686 have it today.
     continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
@@ -58,8 +49,6 @@ jobs:
             target: s390x
           - runner: ubuntu-22.04
             target: ppc64le
-        # Named for the ABI family produced, not the interpreter that builds it — `abi3` is built by
-        # 3.14 but the wheel supports 3.10+.
         abi:
           - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
           - { tag: cp314t, name: "cp314t (free-threaded 3.14)", interpreter: python3.14t }
@@ -96,8 +85,6 @@ jobs:
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
-        # Named for the ABI family produced, not the interpreter that builds it — `abi3` is built by
-        # 3.14 but the wheel supports 3.10+.
         abi:
           - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
           - { tag: cp314t, name: "cp314t (free-threaded 3.14)", interpreter: python3.14t }
@@ -141,8 +128,7 @@ jobs:
           - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", python: "3.15t" }
     steps:
       - uses: actions/checkout@v7
-      # setup-python installs the requested build as the only `python` on PATH, so `-i python` selects
-      # it — including the free-threaded ones, where a `python3.14t.exe` name does not exist on Windows.
+      # setup-python puts the requested build at `python`; Windows has no `python3.14t.exe` to name.
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.abi.python }}
@@ -231,8 +217,7 @@ jobs:
   #         name: wasm-wheels
   #         path: dist
 
-  # No `-i`: maturin cross-compiles without a host interpreter, and the abi3 Cargo feature makes the
-  # result a `cp310-abi3` wheel instead of the previous version-locked one.
+  # No `-i`: cross-compiled without a host interpreter; the Cargo feature still makes it abi3.
   android:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
@@ -270,9 +255,8 @@ jobs:
         with:
           name: wheels-sdist
           path: dist
-  # Guards the claim the matrix rests on: the three ABI wheels together resolve on every interpreter we
-  # support, so a dropped leg or a mis-tagged wheel fails here instead of on a user's `pip install`.
-  # Installs from the artifact dir with --no-index, so pip tag selection is what picks the wheel.
+  # Installs with --no-index so wheel-tag selection picks the wheel: a dropped leg or a mis-tagged
+  # wheel fails here rather than at a user's `pip install`.
   abi-coverage:
     name: abi coverage (one wheel set, every interpreter)
     needs: [linux]
@@ -288,8 +272,7 @@ jobs:
       - name: List built wheels
         run: ls -l wheels
       - name: Install and run the test suite on every interpreter
-        # 3.15/3.15t are omitted: their build leg is advisory while the manylinux images lack the
-        # interpreter, so the abi3t wheel is not guaranteed to be present yet.
+        # 3.15/3.15t omitted: the abi3t leg is advisory, so its wheel may not be present.
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11; do
             echo "::group::$py"
