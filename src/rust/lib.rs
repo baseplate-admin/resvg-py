@@ -334,9 +334,9 @@ fn svg_to_bytes(
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
     // Effects based
-    shape_rendering: Option<String>,
-    text_rendering: Option<String>,
-    image_rendering: Option<String>,
+    shape_rendering: String,
+    text_rendering: String,
+    image_rendering: String,
 ) -> PyResult<Vec<u8>> {
     if log_information.unwrap_or(false) {
         START.call_once(|| {
@@ -394,13 +394,17 @@ fn svg_to_bytes(
         && let Some(svg_path) = svg_path
         && std::path::Path::new(&svg_path).exists()
     {
-        let mut svg_data = std::fs::read(&svg_path).expect("failed to open the provided file");
+        let mut svg_data = std::fs::read(&svg_path)
+            .map_err(|e| PyValueError::new_err(format!("Failed to read '{}': {}", svg_path, e)))?;
         if svg_data.starts_with(&[0x1f, 0x8b]) {
-            svg_data =
-                resvg::usvg::decompress_svgz(&svg_data).expect("can't decompress the svg file");
+            svg_data = resvg::usvg::decompress_svgz(&svg_data).map_err(|e| {
+                PyValueError::new_err(format!("Failed to decompress '{}': {}", svg_path, e))
+            })?;
         };
         _svg_string = std::str::from_utf8(&svg_data)
-            .expect("can't convert bytes to utf-8")
+            .map_err(|e| {
+                PyValueError::new_err(format!("'{}' is not valid UTF-8: {}", svg_path, e))
+            })?
             .to_owned();
     }
 
@@ -413,14 +417,34 @@ fn svg_to_bytes(
     let mut fit_to = FitTo::Original;
     let mut default_size = resvg::usvg::Size::from_wh(100.0, 100.0).unwrap();
 
+    let positive_dimension = |name: &str, value: u32| {
+        if value == 0 {
+            Err(PyValueError::new_err(format!(
+                "The value of '{}' must be a positive integer",
+                name
+            )))
+        } else {
+            Ok(value as f32)
+        }
+    };
+
     if let (Some(w), Some(h)) = (width, height) {
-        default_size = resvg::usvg::Size::from_wh(w as f32, h as f32).unwrap();
+        let (w_f, h_f) = (
+            positive_dimension("width", w)?,
+            positive_dimension("height", h)?,
+        );
+        default_size = resvg::usvg::Size::from_wh(w_f, h_f)
+            .ok_or_else(|| PyValueError::new_err("Failed to build a size from 'width'/'height'"))?;
         fit_to = FitTo::Size(w, h);
     } else if let Some(w) = width {
-        default_size = resvg::usvg::Size::from_wh(w as f32, 100.0).unwrap();
+        let w_f = positive_dimension("width", w)?;
+        default_size = resvg::usvg::Size::from_wh(w_f, 100.0)
+            .ok_or_else(|| PyValueError::new_err("Failed to build a size from 'width'"))?;
         fit_to = FitTo::Width(w);
     } else if let Some(h) = height {
-        default_size = resvg::usvg::Size::from_wh(100.0, h as f32).unwrap();
+        let h_f = positive_dimension("height", h)?;
+        default_size = resvg::usvg::Size::from_wh(100.0, h_f)
+            .ok_or_else(|| PyValueError::new_err("Failed to build a size from 'height'"))?;
         fit_to = FitTo::Height(h);
     } else if let Some(z) = zoom {
         if !z.is_finite() || z <= 0.0 {
@@ -445,40 +469,37 @@ fn svg_to_bytes(
         ));
     }
 
-    let shape_rendering_val = shape_rendering.unwrap();
-    let _shape_rendering = match shape_rendering_val.as_ref() {
+    let _shape_rendering = match shape_rendering.as_ref() {
         "optimize_speed" => resvg::usvg::ShapeRendering::OptimizeSpeed,
         "crisp_edges" => resvg::usvg::ShapeRendering::CrispEdges,
         "geometric_precision" => resvg::usvg::ShapeRendering::GeometricPrecision,
         _ => {
             return Err(PyValueError::new_err(format!(
                 "The value of 'shape_rendering' must be one of 'optimize_speed','crisp_edges','geometric_precision'.It is currently '{}'",
-                shape_rendering_val
+                shape_rendering
             )));
         }
     };
 
-    let text_rendering_val = text_rendering.unwrap();
-    let _text_rendering = match text_rendering_val.as_ref() {
+    let _text_rendering = match text_rendering.as_ref() {
         "optimize_speed" => resvg::usvg::TextRendering::OptimizeSpeed,
         "optimize_legibility" => resvg::usvg::TextRendering::OptimizeLegibility,
         "geometric_precision" => resvg::usvg::TextRendering::GeometricPrecision,
         _ => {
             return Err(PyValueError::new_err(format!(
                 "The value of 'text_rendering' must be one of 'optimize_speed','optimize_legibility','geometric_precision'. It is currently '{}'",
-                text_rendering_val
+                text_rendering
             )));
         }
     };
 
-    let image_rendering_val = image_rendering.unwrap();
-    let _image_rendering = match image_rendering_val.as_ref() {
+    let _image_rendering = match image_rendering.as_ref() {
         "optimize_quality" => resvg::usvg::ImageRendering::OptimizeQuality,
         "optimize_speed" => resvg::usvg::ImageRendering::OptimizeSpeed,
         _ => {
             return Err(PyValueError::new_err(format!(
                 "The value of 'image_rendering' must be one of 'optimize_quality','optimize_speed'. It is currently '{}'",
-                image_rendering_val
+                image_rendering
             )));
         }
     };
