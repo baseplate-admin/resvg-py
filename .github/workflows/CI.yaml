@@ -319,6 +319,45 @@ jobs:
             Write-Output "::endgroup::"
           }
 
+  wheel-coverage-windows-arm64:
+    name: wheel coverage (windows arm64 Python ${{ matrix.python }})
+    needs: [windows]
+    runs-on: windows-11-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows ARM64 has no native CPython 3.10 runtime.
+        python: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-windows-aarch64-*
+          path: wheels
+          merge-multiple: true
+      # uv has no native managed-Python downloads for Windows ARM64, so pin the target explicitly.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: arm64
+          allow-prereleases: true
+      - uses: astral-sh/setup-uv@v10.0.0
+        with:
+          enable-cache: false
+      - name: List built wheels
+        run: Get-ChildItem wheels
+      - name: Install and test target runtime
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          uv venv --python python .venv-target
+          $env:VIRTUAL_ENV = ".venv-target"
+          uv pip install --no-index --find-links wheels resvg_py
+          uv pip install pytest pyperclip
+          uv run --no-project pytest tests -q
+
   wheel-coverage-macos:
     name: wheel coverage (macos arm64 target runtimes)
     needs: [macos]
@@ -355,6 +394,7 @@ jobs:
     needs:
       - wheel-coverage-linux
       - wheel-coverage-windows
+      - wheel-coverage-windows-arm64
       - wheel-coverage-macos
       - musllinux
       - android
