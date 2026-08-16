@@ -32,7 +32,7 @@ jobs:
     name: linux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
     # Advisory until every manylinux image ships python3.15t; only x86_64/i686 have it today.
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' && !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +72,7 @@ jobs:
   musllinux:
     name: musllinux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' && !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
@@ -108,7 +108,7 @@ jobs:
   windows:
     name: windows ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' && !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
@@ -149,7 +149,7 @@ jobs:
   macos:
     name: macos ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
+    continue-on-error: ${{ matrix.abi.tag == 'abi3t' && !startsWith(github.ref, 'refs/tags/') }}
     strategy:
       fail-fast: false
       matrix:
@@ -280,7 +280,7 @@ jobs:
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11; do
             echo "::group::$py"
             uv venv --python "$py" ".venv-$py"
-            VIRTUAL_ENV=".venv-$py" uv pip install --no-index --find-links wheels resvg_py
+            VIRTUAL_ENV=".venv-$py" uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
             VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
             VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
             echo "::endgroup::"
@@ -312,7 +312,7 @@ jobs:
             Write-Output "::group::$py"
             $env:VIRTUAL_ENV = ".venv-$py"
             uv venv --python $py $env:VIRTUAL_ENV
-            uv pip install --no-index --find-links wheels resvg_py
+            uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
             uv pip install pytest pyperclip
             uv run --no-project pytest tests -q
             Remove-Item Env:VIRTUAL_ENV
@@ -354,7 +354,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           uv venv --python python .venv-target
           $env:VIRTUAL_ENV = ".venv-target"
-          uv pip install --no-index --find-links wheels resvg_py
+          uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
           uv pip install pytest pyperclip
           uv run --no-project pytest tests -q
 
@@ -381,7 +381,7 @@ jobs:
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t; do
             echo "::group::$py"
             uv venv --python "$py" ".venv-$py"
-            VIRTUAL_ENV=".venv-$py" uv pip install --no-index --find-links wheels resvg_py
+            VIRTUAL_ENV=".venv-$py" uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
             VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
             VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
             echo "::endgroup::"
@@ -408,6 +408,53 @@ jobs:
       attestations: write
     steps:
       - uses: actions/download-artifact@v8
+      - name: Verify release artifact inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          assert_one_wheel() {
+            local artifact=$1
+            local wheels=("$artifact"/*.whl)
+            if [[ ${#wheels[@]} -ne 1 ]]; then
+              echo "::error::$artifact must contain exactly one wheel; found ${#wheels[@]}"
+              ls -la "$artifact" || true
+              exit 1
+            fi
+          }
+
+          for target in x86_64 x86 aarch64 armv7 s390x ppc64le; do
+            for abi in abi3 cp314t abi3t pypy311; do
+              assert_one_wheel "wheels-linux-$target-$abi"
+            done
+          done
+          for target in x86_64 x86 aarch64 armv7; do
+            for abi in abi3 cp314t abi3t pypy311; do
+              assert_one_wheel "wheels-musllinux-$target-$abi"
+            done
+          done
+          for target in x64 x86 aarch64; do
+            for abi in abi3 cp314t abi3t; do
+              assert_one_wheel "wheels-windows-$target-$abi"
+            done
+          done
+          for target in x86_64 aarch64; do
+            for abi in abi3 cp314t abi3t; do
+              assert_one_wheel "wheels-macos-$target-$abi"
+            done
+          done
+          for target in aarch64-linux-android x86_64-linux-android; do
+            assert_one_wheel "wheels-android-$target"
+          done
+
+          sdists=(wheels-sdist/*.tar.gz)
+          wheels=(wheels-*/*.whl)
+          release_files=(wheels-*/*)
+          if [[ ${#wheels[@]} -ne 57 || ${#sdists[@]} -ne 1 || ${#release_files[@]} -ne 58 ]]; then
+            echo "::error::expected exactly 57 wheels and one sdist; found ${#wheels[@]} wheels, ${#sdists[@]} sdists, and ${#release_files[@]} total files"
+            exit 1
+          fi
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4
         with:
