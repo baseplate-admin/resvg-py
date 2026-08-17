@@ -280,10 +280,9 @@ jobs:
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11; do
             echo "::group::$py"
-            uv venv --python "$py" ".venv-$py"
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv sync --only-group test --python "$py"
             VIRTUAL_ENV=".venv-$py" uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
-            VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
-            VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv run --no-sync pytest -v -x -rs
             echo "::endgroup::"
           done
 
@@ -312,10 +311,9 @@ jobs:
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t; do
             echo "::group::$py"
-            uv venv --python "$py" ".venv-$py"
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv sync --only-group test --python "$py"
             VIRTUAL_ENV=".venv-$py" uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
-            VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
-            VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv run --no-sync pytest -v -x -rs
             echo "::endgroup::"
           done
 
@@ -353,10 +351,9 @@ jobs:
         run: ls -l wheels
       - name: Install and test target runtime
         run: |
-          uv venv --python python .venv-target
+          UV_PROJECT_ENVIRONMENT=.venv-target uv sync --only-group test --python python
           VIRTUAL_ENV=.venv-target uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
-          VIRTUAL_ENV=.venv-target uv pip install pytest pyperclip
-          VIRTUAL_ENV=.venv-target uv run --no-project pytest tests -q
+          UV_PROJECT_ENVIRONMENT=.venv-target uv run --no-sync pytest -v -x -rs
 
   wheel-coverage-macos:
     name: wheel coverage (macos arm64 target runtimes)
@@ -380,10 +377,9 @@ jobs:
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t; do
             echo "::group::$py"
-            uv venv --python "$py" ".venv-$py"
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv sync --only-group test --python "$py"
             VIRTUAL_ENV=".venv-$py" uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
-            VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
-            VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
+            UV_PROJECT_ENVIRONMENT=".venv-$py" uv run --no-sync pytest -v -x -rs
             echo "::endgroup::"
           done
 
