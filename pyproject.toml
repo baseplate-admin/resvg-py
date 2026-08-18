@@ -5,6 +5,7 @@ name = "resvg_py"
 dynamic = ["version"]
 authors = [
     { name = "baseplate-admin", email = "61817579+baseplate-admin@users.noreply.github.com" },
+    { name = "Sergei Iakhnitskii" },
 ]
 classifiers = [
     "Programming Language :: Rust",
