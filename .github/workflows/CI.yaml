@@ -31,8 +31,6 @@ jobs:
   linux:
     name: linux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    # Advisory until every manylinux image ships python3.15t; only x86_64/i686 have it today.
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -67,12 +65,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-linux-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
-          path: dist
+          path: dist/*.whl
+          if-no-files-found: error
 
   musllinux:
     name: musllinux ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -103,12 +101,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
-          path: dist
+          path: dist/*.whl
+          if-no-files-found: error
 
   windows:
     name: windows ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -144,12 +142,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-windows-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
-          path: dist
+          path: dist/*.whl
+          if-no-files-found: error
 
   macos:
     name: macos ${{ matrix.platform.target }} ${{ matrix.abi.name }}
     runs-on: ${{ matrix.platform.runner }}
-    continue-on-error: ${{ matrix.abi.tag == 'abi3t' }}
     strategy:
       fail-fast: false
       matrix:
@@ -178,7 +176,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-macos-${{ matrix.platform.target }}-${{ matrix.abi.tag }}
-          path: dist
+          path: dist/*.whl
+          if-no-files-found: error
 
   # emscripten:
   #   runs-on: ${{ matrix.platform.runner }}
@@ -239,7 +238,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-android-${{ matrix.platform.target }}
-          path: dist
+          path: dist/*.whl
+          if-no-files-found: error
 
   sdist:
     runs-on: ubuntu-latest
@@ -254,63 +254,147 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wheels-sdist
-          path: dist
-  # Installs with --no-index so wheel-tag selection picks the wheel: a dropped leg or a mis-tagged
-  # wheel fails here rather than at a user's `pip install`.
-  abi-coverage:
-    name: abi coverage (one wheel set, every interpreter)
+          path: dist/*.tar.gz
+          if-no-files-found: error
+  # Install the built wheels with --no-index: build interpreters select the ABI family, while these
+  # target interpreters prove the emitted tags and runtime compatibility on each desktop platform.
+  wheel-coverage-linux:
+    name: wheel coverage (linux x86_64 target runtimes)
     needs: [linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v8
         with:
           pattern: wheels-linux-x86_64-*
           path: wheels
           merge-multiple: true
       - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
       - name: List built wheels
         run: ls -l wheels
-      - name: Install and run the test suite on every interpreter
-        # 3.15/3.15t omitted: the abi3t leg is advisory, so its wheel may not be present.
+      - name: Install and test every target runtime
         run: |
-          for py in 3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11; do
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11; do
             echo "::group::$py"
-            uv venv --python "$py" ".venv-$py"
-            VIRTUAL_ENV=".venv-$py" uv pip install --no-index --find-links wheels resvg_py
-            VIRTUAL_ENV=".venv-$py" uv pip install pytest pyperclip
-            VIRTUAL_ENV=".venv-$py" uv run --no-project pytest tests -q
+            uv sync --only-group test --python "$py"
+            uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
+            uv run --no-sync pytest -v -x -rs
             echo "::endgroup::"
           done
 
-  test:
-      needs: [linux, musllinux, windows, macos, android, sdist]
-      name: Run Tests
-      runs-on: windows-latest
-      strategy:
-        matrix:
-          python-version:
-            - '3.10'
-            - '3.11'
-            - '3.12'
-            - '3.13'
-            - '3.14'
-      steps:
-        - uses: actions/checkout@v7
-        - name: Set up Python (uv)
-          uses: astral-sh/setup-uv@v10.0.1
-        - name: Create virtual environment and install dependencies
-          run: |
-            uv sync
-        - name: Run backend tests
-          run: |
-            uv run pytest -v -x -rs
+  wheel-coverage-windows:
+    name: wheel coverage (windows x64 target runtimes)
+    needs: [windows]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-windows-x64-*
+          path: wheels
+          merge-multiple: true
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
+      - name: List built wheels
+        run: ls -l wheels
+      - name: Install and test every target runtime
+        run: |
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t; do
+            echo "::group::$py"
+            uv sync --only-group test --python "$py"
+            uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
+            uv run --no-sync pytest -v -x -rs
+            echo "::endgroup::"
+          done
+
+  wheel-coverage-windows-arm64:
+    name: wheel coverage (windows arm64 Python ${{ matrix.python }})
+    needs: [windows]
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows ARM64 has no native CPython 3.10 runtime.
+        python: ["3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-windows-aarch64-*
+          path: wheels
+          merge-multiple: true
+      # uv has no native managed-Python downloads for Windows ARM64, so pin the target explicitly.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: arm64
+          allow-prereleases: true
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
+      - name: List built wheels
+        run: ls -l wheels
+      - name: Install and test target runtime
+        run: |
+          uv sync --only-group test --python python
+          uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
+          uv run --no-sync pytest -v -x -rs
+
+  wheel-coverage-macos:
+    name: wheel coverage (macos arm64 target runtimes)
+    needs: [macos]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: wheels-macos-aarch64-*
+          path: wheels
+          merge-multiple: true
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: false
+      - name: List built wheels
+        run: ls -l wheels
+      - name: Install and test every target runtime
+        run: |
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t; do
+            echo "::group::$py"
+            uv sync --only-group test --python "$py"
+            uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
+            uv run --no-sync pytest -v -x -rs
+            echo "::endgroup::"
+          done
 
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
-    needs: [test, abi-coverage]
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    needs:
+      - wheel-coverage-linux
+      - wheel-coverage-windows
+      - wheel-coverage-windows-arm64
+      - wheel-coverage-macos
+      - musllinux
+      - android
+      - sdist
     permissions:
       # Use to sign the release artifacts
       id-token: write
@@ -323,13 +407,15 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4
         with:
-          subject-path: 'wheels-*/*'
+          subject-path: |
+            wheels-*/*.whl
+            wheels-sdist/*.tar.gz
       - name: Install uv
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: astral-sh/setup-uv@v10.0.1
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: uv publish 'wheels-*/*'
+        run: uv publish 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       - name: Upload to GitHub Release
