@@ -2,7 +2,7 @@
 name = "resvg_py"
 version = "0.5.0"
 edition = "2024"
-authors = ['baseplate-admin', 'Sergei Iakhnitskii']
+authors = ['baseplate-admin']
 build = 'build.rs'
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]

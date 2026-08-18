@@ -14,7 +14,7 @@ Module attributes
 
 .. data:: __author__
 
-   :iconify:`mdi:account` Colon-separated package authors from the Cargo metadata.
+   :iconify:`mdi:account` Package author.
 
    :type: str
 
