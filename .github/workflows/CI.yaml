@@ -403,6 +403,16 @@ jobs:
       # Used to generate artifact attestation
       attestations: write
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Verify tag matches the package version
+        run: |
+          package_version=$(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "resvg_py") | .version')
+          if [ "$GITHUB_REF_NAME" != "$package_version" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' does not match Cargo.toml version '$package_version'"
+            exit 1
+          fi
       - uses: actions/download-artifact@v8
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4

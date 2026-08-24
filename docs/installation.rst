@@ -26,7 +26,7 @@ Requirements
 
 .. important::
 
-   Python **3.10** through **3.14** is supported. Python 3.9 wheels are no
+   Python **3.10** through **3.15** is supported. Python 3.9 wheels are no
    longer built -- upgrade your interpreter or install from source.
 
 Install
@@ -122,10 +122,11 @@ Verify installation
 .. code-block:: python
 
    >>> import resvg_py
-   >>> resvg_py.__version__
-   '0.3.2'
-   >>> resvg_py.__resvg_version__
-   '0.47.0'
+   >>> from importlib.metadata import version
+   >>> resvg_py.__version__ == version("resvg_py")
+   True
+   >>> isinstance(resvg_py.__resvg_version__, str)
+   True
 
 Install from source
 -------------------
@@ -154,5 +155,4 @@ If no wheel is available for your platform, build from source with
       .. code-block:: bash
 
          uv pip install git+https://github.com/baseplate-admin/resvg-py.git
-
 

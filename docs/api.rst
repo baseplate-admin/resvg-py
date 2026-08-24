@@ -8,7 +8,7 @@ Module attributes
 
 .. data:: __version__
 
-   :iconify:`mdi:tag` Package version string, e.g. ``"0.3.2"``.
+   :iconify:`mdi:tag` Package version string, e.g. ``"1.2.3"``.
 
    :type: str
 
