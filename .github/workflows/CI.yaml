@@ -425,9 +425,7 @@ jobs:
         uses: astral-sh/setup-uv@v10.0.1
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: uv publish 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish --trusted-publishing always 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v3
         with:
