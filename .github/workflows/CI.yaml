@@ -400,6 +400,7 @@ jobs:
       - musllinux
       - android
       - sdist
+    environment: pypi
     permissions:
       # Use to sign the release artifacts
       id-token: write
