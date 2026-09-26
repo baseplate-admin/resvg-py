@@ -1,0 +1,36 @@
+name: dns probe (temporary)
+on:
+  push:
+    branches: [tmp/i686-dns-probe]
+permissions: {}
+jobs:
+  probe:
+    name: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-22.04, ubuntu-26.04]
+    steps:
+      - name: Host
+        run: |
+          uname -a; docker version --format 'docker {{.Server.Version}}'
+          grep -E 'IA32|COMPAT_32' "/boot/config-$(uname -r)" || true
+          cat /etc/resolv.conf | grep -v '^#'
+      - name: Probe
+        run: |
+          probe() {
+            local img=$1; shift
+            echo "::group::$img $*"
+            docker run --rm "$@" "quay.io/pypa/$img:latest" sh -c '
+              uname -m; ldd --version | head -1; grep -v "^#" /etc/resolv.conf
+              getent hosts vault.centos.org; echo "getent rc=$?"
+              curl -sS -o /dev/null -w "curl http=%{http_code}\n" https://vault.centos.org/ || echo "curl rc=$?"' 2>&1
+            echo "::endgroup::"
+          }
+          for img in manylinux2014_x86_64 manylinux2014_i686 manylinux_2_28_i686; do docker pull -q "quay.io/pypa/$img:latest"; done
+          probe manylinux2014_x86_64
+          probe manylinux2014_i686
+          probe manylinux2014_i686 --security-opt seccomp=unconfined
+          probe manylinux2014_i686 --network host
+          probe manylinux_2_28_i686
