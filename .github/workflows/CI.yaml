@@ -35,17 +35,18 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: x86_64
-          - runner: ubuntu-22.04
+          # Docker 29.4.2 on ubuntu-26.04 breaks networking in i386 containers: actions/runner-images#14790
+          - runner: ubuntu-24.04
             target: x86
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: aarch64
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: armv7
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: s390x
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: ppc64le
         abi:
           - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
@@ -75,13 +76,13 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: x86_64
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: x86
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: aarch64
-          - runner: ubuntu-22.04
+          - runner: ubuntu-26.04
             target: armv7
         abi:
           - { tag: abi3, name: "abi3 (GIL 3.10+)", interpreter: python3.14 }
