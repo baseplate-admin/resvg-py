@@ -7,7 +7,11 @@
 #
 # The abi3 floor is the `abi3-py310` Cargo feature, not the build interpreter, which is why the abi3
 # leg builds with 3.14: Windows on ARM has no CPython before 3.11. PyPy has no stable ABI (cpyext
-# emulates the full C API, not the limited one), so it keeps a version-specific leg.
+# emulates the full C API, not the limited one), so it keeps a version-specific leg per PyPy ABI:
+# pp73 (PyPy 7.3) on every Linux target, and pp80 (PyPy 8.0) on x86_64 from manylinux_2_28, because
+# PyPy's official 8.0 binaries need glibc 2.28. The i686 leg is native too and could add pp80 the
+# same way; cross-compiled legs do not produce pp80, since without target sysconfig maturin falls
+# back to a hardcoded pp73.
 #
 # One interpreter per job, never `--find-interpreter`: under abi3 every interpreter emits the same
 # wheel filename, and same-named wheels merged across artifacts can concatenate into a ZIP PyPI
@@ -57,6 +61,14 @@ jobs:
           - { tag: cp314t, name: "cp314t (free-threaded 3.14)", interpreter: python3.14t }
           - { tag: abi3t, name: "abi3t (3.15+, GIL and free-threaded)", interpreter: python3.15t }
           - { tag: pypy311, name: "pypy3.11", interpreter: pypy3.11 }
+        include:
+          # `pypy3.11` in the manylinux_2_28 image runs pp73, so pp80 is selected by path.
+          - platform: { runner: ubuntu-22.04, target: x86_64 }
+            abi:
+              tag: pypy311-pp80
+              name: "pypy3.11 (PyPy 8.0)"
+              interpreter: /opt/python/pp311-pypy311_pp80/bin/python
+              manylinux: "2_28"
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
@@ -65,7 +77,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i ${{ matrix.abi.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: auto
+          manylinux: ${{ matrix.abi.manylinux || 'auto' }}
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
@@ -281,9 +293,11 @@ jobs:
           enable-cache: false
       - name: List built wheels
         run: ls -l wheels
+      # PyPy is pinned per ABI: 3.11.15 is PyPy 7.3 (pp73), 3.11.16 is PyPy 8.0 (pp80). Unpinned, a
+      # PyPy release with a new ABI fails this job for want of a matching wheel.
       - name: Install and test every target runtime
         run: |
-          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11; do
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 pypy@3.11.16; do
             echo "::group::$py"
             uv sync --only-group test --python "$py"
             uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
