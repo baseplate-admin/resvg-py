@@ -433,4 +433,5 @@ jobs:
         with:
           files: |
             wasm-wheels/*.whl
+          generate_release_notes: true
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
