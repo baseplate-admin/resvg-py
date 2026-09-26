@@ -15,6 +15,7 @@ jobs:
       - run: docker version --format 'docker {{.Server.Version}}'
       - name: Reproducer candidates
         run: |
+          set +e
           for img in i386/debian:bookworm i386/debian:buster i386/alpine:3 i386/busybox; do
             case $img in *busybox) cmd="nslookup github.com";; *alpine*) cmd="getent hosts github.com";; *) cmd="getent hosts github.com";; esac
             docker pull -q $img >/dev/null
