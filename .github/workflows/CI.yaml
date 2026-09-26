@@ -23,6 +23,11 @@ on:
       - '*'
   pull_request:
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: Publish the built wheels and sdist to TestPyPI
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -432,3 +437,25 @@ jobs:
           files: |
             wasm-wheels/*.whl
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+
+  # TestPyPI files are immutable: each run needs a version not yet uploaded there.
+  testpypi:
+    name: TestPyPI rehearsal
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
+    needs:
+      - wheel-coverage-linux
+      - wheel-coverage-windows
+      - wheel-coverage-windows-arm64
+      - wheel-coverage-macos
+      - musllinux
+      - android
+      - sdist
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Publish to TestPyPI
+        run: uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
