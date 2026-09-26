@@ -37,7 +37,8 @@ jobs:
         platform:
           - runner: ubuntu-26.04
             target: x86_64
-          - runner: ubuntu-26.04
+          # Docker 29.4.2 on ubuntu-26.04 breaks networking in i386 containers: actions/runner-images#14790
+          - runner: ubuntu-24.04
             target: x86
           - runner: ubuntu-26.04
             target: aarch64
