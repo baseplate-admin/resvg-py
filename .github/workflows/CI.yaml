@@ -8,9 +8,10 @@
 # The abi3 floor is the `abi3-py310` Cargo feature, not the build interpreter, which is why the abi3
 # leg builds with 3.14: Windows on ARM has no CPython before 3.11. PyPy has no stable ABI (cpyext
 # emulates the full C API, not the limited one), so it keeps a version-specific leg per PyPy ABI:
-# pp73 (PyPy 7.3) on every Linux target, and pp80 (PyPy 8.0) on x86_64 from manylinux_2_28, since
-# PyPy 8.0 needs glibc 2.28. Cross-compiled legs do not produce pp80: without target sysconfig,
-# maturin falls back to a hardcoded pp73.
+# pp73 (PyPy 7.3) on every Linux target, and pp80 (PyPy 8.0) on x86_64 from manylinux_2_28, because
+# PyPy's official 8.0 binaries need glibc 2.28. The i686 leg is native too and could add pp80 the
+# same way; cross-compiled legs do not produce pp80, since without target sysconfig maturin falls
+# back to a hardcoded pp73.
 #
 # One interpreter per job, never `--find-interpreter`: under abi3 every interpreter emits the same
 # wheel filename, and same-named wheels merged across artifacts can concatenate into a ZIP PyPI
@@ -288,7 +289,7 @@ jobs:
       - name: List built wheels
         run: ls -l wheels
       # PyPy is pinned per ABI: 3.11.15 is PyPy 7.3 (pp73), 3.11.16 is PyPy 8.0 (pp80). Unpinned, a
-      # new PyPy release fails this job for want of a matching wheel.
+      # PyPy release with a new ABI fails this job for want of a matching wheel.
       - name: Install and test every target runtime
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 pypy@3.11.16; do
