@@ -473,6 +473,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/download-artifact@v8
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.0
       - name: Publish to TestPyPI
         run: uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
