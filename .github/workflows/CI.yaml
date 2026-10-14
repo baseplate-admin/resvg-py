@@ -59,7 +59,7 @@ jobs:
           - { tag: pypy311, name: "pypy3.11", interpreter: pypy3.11 }
         include:
           # `pypy3.11` in the manylinux_2_28 image runs pp73, so pp80 is selected by path.
-          - platform: { runner: ubuntu-22.04, target: x86_64 }
+          - platform: { runner: ubuntu-26.04, target: x86_64 }
             abi:
               tag: pypy311-pp80
               name: "pypy3.11 (PyPy 8.0)"
