@@ -27,6 +27,11 @@ on:
       - '*'
   pull_request:
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: Publish the built wheels and sdist to TestPyPI
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -410,6 +415,7 @@ jobs:
       - musllinux
       - android
       - sdist
+    environment: pypi
     permissions:
       # Use to sign the release artifacts
       id-token: write
@@ -440,9 +446,7 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: uv publish 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish --trusted-publishing always 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -450,3 +454,25 @@ jobs:
             wasm-wheels/*.whl
           generate_release_notes: true
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+
+  # TestPyPI files are immutable: each run needs a version not yet uploaded there.
+  testpypi:
+    name: TestPyPI rehearsal
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi }}
+    needs:
+      - wheel-coverage-linux
+      - wheel-coverage-windows
+      - wheel-coverage-windows-arm64
+      - wheel-coverage-macos
+      - musllinux
+      - android
+      - sdist
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+      - uses: astral-sh/setup-uv@v10.3.0
+      - name: Publish to TestPyPI
+        run: uv publish --trusted-publishing always --publish-url https://test.pypi.org/legacy/ 'wheels-*/*.whl' 'wheels-sdist/*.tar.gz'
