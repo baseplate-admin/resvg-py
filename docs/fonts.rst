@@ -82,6 +82,18 @@ Loading custom fonts
              font_dirs=["/path/to/fonts/"],
          )
 
+   .. tab:: :iconify:`mdi:memory` From memory
+
+      .. code-block:: python
+
+         with open("/path/to/MyFont.ttf", "rb") as f:
+             font = f.read()
+
+         resvg_py.svg_to_bytes(
+             svg_string=svg,
+             font_data=[font],
+         )
+
    .. tab:: :iconify:`mdi:format-font` Override families
 
       .. code-block:: python
@@ -92,13 +104,39 @@ Loading custom fonts
              monospace_family="Fira Code",
          )
 
+Web fonts (WOFF and WOFF2)
+--------------------------
+
+``resvg`` reads TrueType and OpenType fonts only, so ``.woff`` and ``.woff2``
+files passed in ``font_files`` or ``font_dirs`` are skipped. Decompress them
+first, for example with `fontTools <https://github.com/fonttools/fonttools>`_
+(``pip install "fonttools[woff]"``), and pass the result in ``font_data``:
+
+.. code-block:: python
+
+   import io
+
+   from fontTools.ttLib import TTFont
+
+   def decompress_web_font(path):
+       font = TTFont(path)
+       font.flavor = None
+       buffer = io.BytesIO()
+       font.save(buffer)
+       return buffer.getvalue()
+
+   resvg_py.svg_to_bytes(
+       svg_string=svg,
+       font_data=[decompress_web_font("/path/to/MyFont.woff2")],
+   )
+
 Skipping system fonts
 ---------------------
 
 .. warning::
 
-   Setting ``skip_system_fonts=True`` without providing ``font_files`` or
-   ``font_dirs`` will cause text to render as empty boxes.
+   Setting ``skip_system_fonts=True`` without providing ``font_files``,
+   ``font_dirs`` or ``font_data`` will cause text to render as empty boxes.
 
 .. code-block:: python
 
