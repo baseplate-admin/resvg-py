@@ -6,8 +6,8 @@
 #   abi3t    cp315-abi3.abi3t   GIL and free-threaded 3.15+, and later   3.15t
 #
 # The abi3 floor is the `abi3-py310` Cargo feature, not the build interpreter, which is why the abi3
-# leg builds with 3.14: Windows on ARM has no CPython before 3.11. PyPy has no stable ABI (cpyext
-# emulates the full C API, not the limited one), so it keeps a version-specific leg per PyPy ABI:
+# leg builds with 3.14: Windows on ARM has no CPython before 3.11. PyPy wheels are built and tested
+# separately for each Python version and PyPy ABI:
 # pp73 (PyPy 7.3) on every Linux target, and pp80 (PyPy 8.0) on x86_64, i686 and aarch64 from
 # manylinux_2_28, because PyPy's official 8.0 binaries need glibc 2.28. Other legs cross-compile;
 # without target sysconfig maturin falls back to a hardcoded pp73.
@@ -81,6 +81,24 @@ jobs:
               name: "pypy3.11 (PyPy 8.0)"
               interpreter: /opt/python/pp311-pypy311_pp80/bin/python
               manylinux: "2_28"
+          - platform: { runner: ubuntu-26.04, target: x86_64 }
+            abi:
+              tag: pypy312-pp80
+              name: "pypy3.12 (PyPy 8.0)"
+              interpreter: /opt/python/pp312-pypy312_pp80/bin/python
+              manylinux: "2_28"
+          - platform: { runner: ubuntu-24.04, target: x86 }
+            abi:
+              tag: pypy312-pp80
+              name: "pypy3.12 (PyPy 8.0)"
+              interpreter: /opt/python/pp312-pypy312_pp80/bin/python
+              manylinux: "2_28"
+          - platform: { runner: ubuntu-26.04-arm, target: aarch64 }
+            abi:
+              tag: pypy312-pp80
+              name: "pypy3.12 (PyPy 8.0)"
+              interpreter: /opt/python/pp312-pypy312_pp80/bin/python
+              manylinux: "2_28"
     steps:
       - uses: actions/checkout@v7
       - name: Build wheels
@@ -91,14 +109,15 @@ jobs:
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: ${{ matrix.abi.manylinux || 'auto' }}
       - name: Test native PyPy 8.0 wheels
-        if: ${{ matrix.abi.tag == 'pypy311-pp80' && matrix.platform.target != 'x86_64' }}
+        if: ${{ endsWith(matrix.abi.tag, '-pp80') && matrix.platform.target != 'x86_64' }}
         env:
           PYPY_IMAGE: quay.io/pypa/manylinux_2_28_${{ matrix.platform.target == 'x86' && 'i686' || matrix.platform.target }}:latest
+          PYPY_INTERPRETER: ${{ matrix.abi.interpreter }}
         run: |
-          docker run --rm -v "$PWD:/io" -w /io "$PYPY_IMAGE" bash -euxo pipefail -c '
-            pypy=/opt/python/pp311-pypy311_pp80/bin/python
+          docker run --rm -e PYPY_INTERPRETER -v "$PWD:/io" -w /io "$PYPY_IMAGE" bash -euxo pipefail -c '
+            pypy="$PYPY_INTERPRETER"
             "$pypy" -m pip install --only-binary :all: --no-index --find-links dist resvg_py
-            "$pypy" -m pip install pytest pyperclip
+            "$pypy" -m pip install --group test
             "$pypy" -m pytest -v -x -rs
           '
       - name: Upload wheels
@@ -316,11 +335,11 @@ jobs:
           enable-cache: false
       - name: List built wheels
         run: ls -l wheels
-      # PyPy is pinned per ABI: 3.11.15 is PyPy 7.3 (pp73), 3.11.16 is PyPy 8.0 (pp80). Unpinned, a
-      # PyPy release with a new ABI fails this job for want of a matching wheel.
+      # Keep pp73 fixed; the current 3.11 range excludes it while tracking newer patches.
       - name: Install and test every target runtime
         run: |
-          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 pypy@3.11.16; do
+          uv python install --upgrade pypy@3.11 pypy@3.12
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 'pypy>=3.11.16,<3.12' pypy@3.12; do
             echo "::group::$py"
             uv sync --only-group test --python "$py"
             uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
