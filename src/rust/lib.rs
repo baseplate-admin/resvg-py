@@ -6,6 +6,7 @@ Based on
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::pybacked::PyBackedBytes;
 use resvg::usvg::fontdb;
 use resvg::{self, usvg::FontResolver};
 use std::sync::{Arc, Once, OnceLock};
@@ -103,6 +104,7 @@ struct Opts<'a> {
     background: Option<svgtypes::Color>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
+    font_data: Option<Vec<Vec<u8>>>,
     // Abstract Classes
     fit_to: FitTo,
     usvg_opt: resvg::usvg::Options<'a>,
@@ -115,6 +117,7 @@ fn load_fonts(
     fontdb: &mut resvg::usvg::fontdb::Database,
     font_files: &Option<Vec<String>>,
     font_dirs: &Option<Vec<String>>,
+    font_data: Option<Vec<Vec<u8>>>,
     serif_family: String,
     sans_serif_family: String,
     cursive_family: String,
@@ -133,6 +136,11 @@ fn load_fonts(
         for path in font_dirs {
             fontdb.load_fonts_dir(path);
         }
+    }
+
+    // fontdb logs and skips data it cannot parse as a font.
+    for data in font_data.into_iter().flatten() {
+        fontdb.load_font_data(data);
     }
 
     fontdb.set_serif_family(serif_family);
@@ -192,8 +200,9 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         } else {
             let no_font_files = options.font_files.as_ref().is_none_or(|v| v.is_empty());
             let no_font_dirs = options.font_dirs.as_ref().is_none_or(|v| v.is_empty());
+            let no_font_data = options.font_data.as_ref().is_none_or(|v| v.is_empty());
 
-            if no_font_files && no_font_dirs {
+            if no_font_files && no_font_dirs && no_font_data {
                 log::warn!(
                     "No fonts provided and system fonts are skipped. Text might not be rendered."
                 );
@@ -204,6 +213,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
             fontdb,
             &options.font_files,
             &options.font_dirs,
+            options.font_data,
             options.serif_family.unwrap(),
             options.sans_serif_family.unwrap(),
             options.cursive_family.unwrap(),
@@ -266,6 +276,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 /// :type font_files: list[str] | None
 /// :param font_dirs: Directories recursively scanned for font files.
 /// :type font_dirs: list[str] | None
+/// :param font_data: Font contents (TrueType or OpenType ``bytes``) loaded from memory.
+/// :type font_data: list[bytes] | None
 /// :param shape_rendering: Shape rendering policy. One of ``"optimize_speed"``, ``"crisp_edges"``, ``"geometric_precision"``.
 /// :type shape_rendering: str
 /// :param text_rendering: Text rendering policy. One of ``"optimize_speed"``, ``"optimize_legibility"``, ``"geometric_precision"``.
@@ -299,6 +311,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     monospace_family = None,
     font_files = None,
     font_dirs = None,
+    font_data = None,
     shape_rendering = "geometric_precision".to_owned(),
     text_rendering = "optimize_legibility".to_owned(),
     image_rendering = "optimize_quality".to_owned(),
@@ -333,6 +346,7 @@ fn svg_to_bytes(
     // Font files and directories
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
+    font_data: Option<Vec<PyBackedBytes>>,
     // Effects based
     shape_rendering: String,
     text_rendering: String,
@@ -552,6 +566,7 @@ fn svg_to_bytes(
         monospace_family,
         font_files,
         font_dirs,
+        font_data: font_data.map(|fonts| fonts.iter().map(|font| font.to_vec()).collect()),
     };
     match resvg_magic(options, _svg_string.trim().to_owned()) {
         Ok(pixmap) => Ok(pixmap),

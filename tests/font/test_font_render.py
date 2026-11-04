@@ -61,6 +61,32 @@ def test_font_directory():
     assert base == _expected["with_kokoro_font"]
 
 
+@pytest.mark.parametrize("container", [bytes, bytearray])
+def test_font_data(container):
+    path = os.path.join(BASE_DIR, "ink.svg")
+    font = container(Path(BASE_DIR, "font_dir", "Kokoro-Regular.ttf").read_bytes())
+    base = base64.b64encode(
+        bytes(
+            resvg_py.svg_to_bytes(
+                svg_path=path, skip_system_fonts=True, font_data=[font]
+            )
+        )
+    ).decode("utf-8")
+    assert base == _expected["with_kokoro_font"]
+
+
+def test_invalid_font_data_is_skipped():
+    path = os.path.join(BASE_DIR, "ink.svg")
+    base = base64.b64encode(
+        bytes(
+            resvg_py.svg_to_bytes(
+                svg_path=path, skip_system_fonts=True, font_data=[b"not a font"]
+            )
+        )
+    ).decode("utf-8")
+    assert base == _expected["without_system_font"]
+
+
 def test_font_cache_consistency():
     path = os.path.join(BASE_DIR, "ink.svg")
     font = str(Path(BASE_DIR, "font_dir"))

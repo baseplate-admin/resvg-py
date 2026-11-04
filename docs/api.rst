@@ -55,7 +55,7 @@ Parameter reference
    * - ``skip_system_fonts``
      - ``bool``
      - ``False``
-     - Skip loading system fonts. Provide ``font_files`` or ``font_dirs``.
+     - Skip loading system fonts. Provide ``font_files``, ``font_dirs`` or ``font_data``.
    * - ``log_information``
      - ``bool``
      - ``False``
@@ -124,6 +124,10 @@ Parameter reference
      - ``list[str] | None``
      - ``None``
      - Directories recursively scanned for fonts.
+   * - ``font_data``
+     - ``list[bytes] | None``
+     - ``None``
+     - Font contents (TrueType or OpenType) loaded from memory.
    * - ``shape_rendering``
      - ``str``
      - ``"geometric_precision"``
