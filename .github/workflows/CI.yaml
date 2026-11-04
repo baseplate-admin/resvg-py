@@ -335,11 +335,11 @@ jobs:
           enable-cache: false
       - name: List built wheels
         run: ls -l wheels
-      # PyPy is pinned per ABI: 3.11.15 is PyPy 7.3 (pp73), 3.11.16 is PyPy 8.0 (pp80). Unpinned, a
-      # PyPy release with a new ABI fails this job for want of a matching wheel.
+      # Keep pp73 fixed; the current 3.11 range excludes it while tracking newer patches.
       - name: Install and test every target runtime
         run: |
-          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 pypy@3.11.16 pypy@3.12.15; do
+          uv python install --upgrade pypy@3.11 pypy@3.12
+          for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 'pypy>=3.11.16,<3.12' pypy@3.12; do
             echo "::group::$py"
             uv sync --only-group test --python "$py"
             uv pip install --only-binary :all: --no-index --find-links wheels resvg_py
