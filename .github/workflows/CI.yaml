@@ -93,7 +93,7 @@ jobs:
               name: "pypy3.12 (PyPy 8.0)"
               interpreter: /opt/python/pp312-pypy312_pp80/bin/python
               manylinux: "2_28"
-          - platform: { runner: ubuntu-24.04-arm, target: aarch64 }
+          - platform: { runner: ubuntu-26.04-arm, target: aarch64 }
             abi:
               tag: pypy312-pp80
               name: "pypy3.12 (PyPy 8.0)"
@@ -117,7 +117,7 @@ jobs:
           docker run --rm -e PYPY_INTERPRETER -v "$PWD:/io" -w /io "$PYPY_IMAGE" bash -euxo pipefail -c '
             pypy="$PYPY_INTERPRETER"
             "$pypy" -m pip install --only-binary :all: --no-index --find-links dist resvg_py
-            "$pypy" -m pip install pytest pyperclip
+            "$pypy" -m pip install --group test
             "$pypy" -m pytest -v -x -rs
           '
       - name: Upload wheels
@@ -336,7 +336,7 @@ jobs:
       - name: List built wheels
         run: ls -l wheels
       # PyPy is pinned per ABI: 3.11.15 is PyPy 7.3 (pp73), 3.11.16 is PyPy 8.0 (pp80). Unpinned, a
-      # PyPy release with a new ABI fails this job for want of a matching wheel. PyPy 3.12 is pinned too.
+      # PyPy release with a new ABI fails this job for want of a matching wheel.
       - name: Install and test every target runtime
         run: |
           for py in 3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy@3.11.15 pypy@3.11.16 pypy@3.12.15; do
