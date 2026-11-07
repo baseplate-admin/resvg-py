@@ -1,18 +1,24 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": ["mergeConfidence:all-badges", "config:recommended"],
-    "prConcurrentLimit": 100,
+    "schedule": ["* * 1 * *"],
+    "prConcurrentLimit": 3,
     "lockFileMaintenance": {
-        "enabled": true
+        "enabled": true,
+        "schedule": ["* * 1 * *"]
     },
     "packageRules": [
         {
             "matchManagers": ["cargo"],
-            "matchPackageNames": ["/.*/"]
+            "groupName": "Rust dependencies"
         },
         {
-            "matchManagers": ["uv"],
-            "matchPackageNames": ["/.*/"]
+            "matchManagers": ["pep621"],
+            "groupName": "Python dependencies"
+        },
+        {
+            "matchManagers": ["github-actions"],
+            "groupName": "GitHub Actions"
         }
     ]
 }
