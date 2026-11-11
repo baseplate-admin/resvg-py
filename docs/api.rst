@@ -124,10 +124,6 @@ Parameter reference
      - ``list[str] | None``
      - ``None``
      - Directories recursively scanned for fonts.
-   * - ``font_data``
-     - ``list[bytes] | None``
-     - ``None``
-     - Font contents (TrueType or OpenType) loaded from memory.
    * - ``shape_rendering``
      - ``str``
      - ``"geometric_precision"``
@@ -140,6 +136,10 @@ Parameter reference
      - ``str``
      - ``"optimize_quality"``
      - Image rendering policy.
+   * - ``font_data``
+     - ``list[bytes] | None``
+     - ``None``
+     - Font contents (TrueType or OpenType) loaded from memory.
 
 Rendering policies
 ~~~~~~~~~~~~~~~~~~

@@ -6,7 +6,6 @@ Based on
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::pybacked::PyBackedBytes;
 use resvg::usvg::fontdb;
 use resvg::{self, usvg::FontResolver};
 use std::sync::{Arc, Once, OnceLock};
@@ -276,14 +275,14 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 /// :type font_files: list[str] | None
 /// :param font_dirs: Directories recursively scanned for font files.
 /// :type font_dirs: list[str] | None
-/// :param font_data: Font contents (TrueType or OpenType ``bytes``) loaded from memory.
-/// :type font_data: list[bytes] | None
 /// :param shape_rendering: Shape rendering policy. One of ``"optimize_speed"``, ``"crisp_edges"``, ``"geometric_precision"``.
 /// :type shape_rendering: str
 /// :param text_rendering: Text rendering policy. One of ``"optimize_speed"``, ``"optimize_legibility"``, ``"geometric_precision"``.
 /// :type text_rendering: str
 /// :param image_rendering: Image rendering policy. One of ``"optimize_quality"``, ``"optimize_speed"``.
 /// :type image_rendering: str
+/// :param font_data: Font contents (TrueType or OpenType ``bytes``) loaded from memory.
+/// :type font_data: list[bytes] | None
 /// :returns: PNG-encoded image data.
 /// :rtype: bytes
 /// :raises ValueError: On empty/invalid SVG, bad option values, unparseable background color, or render failure.
@@ -311,10 +310,10 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     monospace_family = None,
     font_files = None,
     font_dirs = None,
-    font_data = None,
     shape_rendering = "geometric_precision".to_owned(),
     text_rendering = "optimize_legibility".to_owned(),
     image_rendering = "optimize_quality".to_owned(),
+    font_data = None,
     ))]
 fn svg_to_bytes(
     svg_string: Option<String>,
@@ -346,11 +345,12 @@ fn svg_to_bytes(
     // Font files and directories
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
-    font_data: Option<Vec<PyBackedBytes>>,
     // Effects based
     shape_rendering: String,
     text_rendering: String,
     image_rendering: String,
+    // Font contents, after the existing arguments so their positions stay the same
+    font_data: Option<Vec<Vec<u8>>>,
 ) -> PyResult<Vec<u8>> {
     if log_information.unwrap_or(false) {
         START.call_once(|| {
@@ -566,7 +566,7 @@ fn svg_to_bytes(
         monospace_family,
         font_files,
         font_dirs,
-        font_data: font_data.map(|fonts| fonts.iter().map(|font| font.to_vec()).collect()),
+        font_data,
     };
     match resvg_magic(options, _svg_string.trim().to_owned()) {
         Ok(pixmap) => Ok(pixmap),

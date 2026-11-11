@@ -26,7 +26,6 @@ def svg_to_bytes(
     monospace_family: str | None = None,
     font_files: list[str] | None = None,
     font_dirs: list[str] | None = None,
-    font_data: list[bytes] | None = None,
     shape_rendering: Literal[
         "optimize_speed", "crisp_edges", "geometric_precision"
     ] = "geometric_precision",
@@ -34,4 +33,5 @@ def svg_to_bytes(
         "optimize_speed", "optimize_legibility", "geometric_precision"
     ] = "optimize_legibility",
     image_rendering: Literal["optimize_quality", "optimize_speed"] = "optimize_quality",
+    font_data: list[bytes] | None = None,
 ) -> bytes: ...
