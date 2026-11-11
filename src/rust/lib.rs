@@ -103,6 +103,7 @@ struct Opts<'a> {
     background: Option<svgtypes::Color>,
     font_files: Option<Vec<String>>,
     font_dirs: Option<Vec<String>>,
+    font_data: Option<Vec<Vec<u8>>>,
     // Abstract Classes
     fit_to: FitTo,
     usvg_opt: resvg::usvg::Options<'a>,
@@ -115,6 +116,7 @@ fn load_fonts(
     fontdb: &mut resvg::usvg::fontdb::Database,
     font_files: &Option<Vec<String>>,
     font_dirs: &Option<Vec<String>>,
+    font_data: Option<Vec<Vec<u8>>>,
     serif_family: String,
     sans_serif_family: String,
     cursive_family: String,
@@ -133,6 +135,11 @@ fn load_fonts(
         for path in font_dirs {
             fontdb.load_fonts_dir(path);
         }
+    }
+
+    // fontdb logs and skips data it cannot parse as a font.
+    for data in font_data.into_iter().flatten() {
+        fontdb.load_font_data(data);
     }
 
     fontdb.set_serif_family(serif_family);
@@ -192,8 +199,9 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
         } else {
             let no_font_files = options.font_files.as_ref().is_none_or(|v| v.is_empty());
             let no_font_dirs = options.font_dirs.as_ref().is_none_or(|v| v.is_empty());
+            let no_font_data = options.font_data.as_ref().is_none_or(|v| v.is_empty());
 
-            if no_font_files && no_font_dirs {
+            if no_font_files && no_font_dirs && no_font_data {
                 log::warn!(
                     "No fonts provided and system fonts are skipped. Text might not be rendered."
                 );
@@ -204,6 +212,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
             fontdb,
             &options.font_files,
             &options.font_dirs,
+            options.font_data,
             options.serif_family.unwrap(),
             options.sans_serif_family.unwrap(),
             options.cursive_family.unwrap(),
@@ -272,6 +281,8 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
 /// :type text_rendering: str
 /// :param image_rendering: Image rendering policy. One of ``"optimize_quality"``, ``"optimize_speed"``.
 /// :type image_rendering: str
+/// :param font_data: Font contents (TrueType or OpenType ``bytes``) loaded from memory.
+/// :type font_data: list[bytes] | None
 /// :returns: PNG-encoded image data.
 /// :rtype: bytes
 /// :raises ValueError: On empty/invalid SVG, bad option values, unparseable background color, or render failure.
@@ -302,6 +313,7 @@ fn resvg_magic(mut options: Opts, svg_string: String) -> Result<Vec<u8>, String>
     shape_rendering = "geometric_precision".to_owned(),
     text_rendering = "optimize_legibility".to_owned(),
     image_rendering = "optimize_quality".to_owned(),
+    font_data = None,
     ))]
 fn svg_to_bytes(
     svg_string: Option<String>,
@@ -337,6 +349,8 @@ fn svg_to_bytes(
     shape_rendering: String,
     text_rendering: String,
     image_rendering: String,
+    // Font contents, after the existing arguments so their positions stay the same
+    font_data: Option<Vec<Vec<u8>>>,
 ) -> PyResult<Vec<u8>> {
     if log_information.unwrap_or(false) {
         START.call_once(|| {
@@ -552,6 +566,7 @@ fn svg_to_bytes(
         monospace_family,
         font_files,
         font_dirs,
+        font_data,
     };
     match resvg_magic(options, _svg_string.trim().to_owned()) {
         Ok(pixmap) => Ok(pixmap),

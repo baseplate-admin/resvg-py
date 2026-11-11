@@ -55,7 +55,7 @@ Parameter reference
    * - ``skip_system_fonts``
      - ``bool``
      - ``False``
-     - Skip loading system fonts. Provide ``font_files`` or ``font_dirs``.
+     - Skip loading system fonts. Provide ``font_files``, ``font_dirs`` or ``font_data``.
    * - ``log_information``
      - ``bool``
      - ``False``
@@ -136,6 +136,10 @@ Parameter reference
      - ``str``
      - ``"optimize_quality"``
      - Image rendering policy.
+   * - ``font_data``
+     - ``list[bytes] | None``
+     - ``None``
+     - Font contents (TrueType or OpenType) loaded from memory.
 
 Rendering policies
 ~~~~~~~~~~~~~~~~~~

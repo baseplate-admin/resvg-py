@@ -33,4 +33,5 @@ def svg_to_bytes(
         "optimize_speed", "optimize_legibility", "geometric_precision"
     ] = "optimize_legibility",
     image_rendering: Literal["optimize_quality", "optimize_speed"] = "optimize_quality",
+    font_data: list[bytes] | None = None,
 ) -> bytes: ...
